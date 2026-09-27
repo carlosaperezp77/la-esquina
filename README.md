@@ -9,8 +9,7 @@ Es una web app instalable (PWA): se abre desde el navegador en teléfonos y lapt
 - **Cocina**: ve las comandas en orden de llegada y las pasa de *Nuevas* a *Preparando* a *Listas*. Suena cuando entra una nueva.
 - **Mesero**: toma pedidos y recibe el aviso cuando una comanda está lista para servir.
 
-Los precios están en `src/domain/menu.ts` y son de ejemplo hasta cargar el menú real.
-La tasa BCV se escribe a mano en caja por ahora; la consulta automática es la etapa 2.
+Antes de tomar pedidos, el cajero hace la **apertura del día**: escribe la tasa BCV y los precios en bolívares, y la app muestra el equivalente en dólares. Cada comanda guarda la tasa y el total con que se creó.
 
 ## Probarla en tu equipo
 
@@ -25,7 +24,7 @@ Sin configuración corre en **modo demo**: los datos quedan solo en ese navegado
 ## Usarla en varios equipos a la vez (Supabase)
 
 1. Crea un proyecto gratis en [supabase.com](https://supabase.com).
-2. En *SQL Editor* ejecuta `supabase/migrations/0001_comandas.sql`.
+2. En *SQL Editor* ejecuta, en orden, los archivos de `supabase/migrations/`.
 3. Copia `.env.example` a `.env.local` y pon la URL y la clave pública (*Project Settings → API*).
 4. `npm run dev` otra vez: arriba a la derecha dirá "En línea".
 

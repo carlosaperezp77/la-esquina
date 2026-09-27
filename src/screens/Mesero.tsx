@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { FormularioComanda } from '../components/FormularioComanda'
 import { almacen } from '../data'
-import { fmtNumero, hora, quien, resumen } from '../domain/calculos'
-import type { Comanda } from '../domain/tipos'
+import { fmtNumero, hora, hoy, quien, resumen } from '../domain/calculos'
+import type { Comanda, Jornada } from '../domain/tipos'
 
-export function Mesero({ comandas }: { comandas: Comanda[] }) {
+export function Mesero({ comandas, ultimaJornada }: { comandas: Comanda[]; ultimaJornada: Jornada | null }) {
+  const jornada = ultimaJornada?.fecha === hoy() ? ultimaJornada : null
   const [vista, setVista] = useState<'servir' | 'nueva'>('servir')
   const [aviso, setAviso] = useState<string | null>(null)
   const listas = comandas.filter(c => c.estado === 'lista')
@@ -31,7 +32,10 @@ export function Mesero({ comandas }: { comandas: Comanda[] }) {
         <button type="button" aria-pressed={vista === 'nueva'} onClick={() => setVista('nueva')}>Nueva comanda</button>
       </div>
 
-      {vista === 'nueva' ? <FormularioComanda /> : (
+      {vista === 'nueva' ? (
+        jornada ? <FormularioComanda jornada={jornada} />
+          : <p className="vacio">La caja todavía no abrió el día. Cuando el cajero ponga la tasa y los precios, podrás tomar pedidos.</p>
+      ) : (
         <section className="lista">
           {listas.length === 0 && <p className="vacio">No hay comandas listas. Te aviso cuando cocina termine una.</p>}
           {listas.map(c => <ParaServir key={c.id} c={c} />)}

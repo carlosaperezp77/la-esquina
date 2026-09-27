@@ -163,3 +163,22 @@ textarea.box { width: 100%; min-height: 78px; resize: vertical; font-size: 17px;
 @media (prefers-reduced-motion: reduce) {
   .btn:active { transform: none; }
 }
+
+/* Apertura del día */
+.apertura .entrada { display: flex; align-items: center; gap: 8px; }
+.apertura .entrada > span { font-size: 19px; font-weight: 700; color: var(--soft); }
+.apertura .entrada .box { width: 140px; text-align: right; font-size: 22px; }
+.apertura .tasa { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.apertura .tasa .por { font-weight: 600; }
+.precios { display: flex; flex-direction: column; gap: 10px; }
+.precio { display: grid; grid-template-columns: 54px 1fr auto; grid-template-areas: "ic nombre entrada" "ic usd entrada"; gap: 2px 14px; align-items: center; background: var(--col); border-radius: 10px; padding: 8px 12px; }
+.precio .ic { grid-area: ic; margin: 0; }
+.precio label { grid-area: nombre; font-size: 21px; font-weight: 700; }
+.precio .entrada { grid-area: entrada; }
+.precio .usd { grid-area: usd; color: var(--mustard); font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tasa-dia { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; color: var(--soft); font-size: 16px; }
+.tasa-dia b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.tasa-dia button { background: none; border: 0; color: var(--mustard); font: 700 16px var(--f); text-decoration: underline; cursor: pointer; padding: 0; }
+@media (max-width: 480px) {
+  .apertura .entrada .box { width: 110px; }
+}

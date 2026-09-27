@@ -16,9 +16,6 @@ import efectivo from '../assets/iconos/efectivo.png'
 import movil from '../assets/iconos/movil.png'
 import tarjeta from '../assets/iconos/tarjeta.png'
 
-// Precios de ejemplo hasta tener el menú real.
-export const PRECIO_PERRO_USD = 3.0
-
 export const INGREDIENTES: { id: IngredienteId; nombre: string; icono: string }[] = [
   { id: 'salchicha', nombre: 'Salchicha', icono: salchicha },
   { id: 'repollo', nombre: 'Repollo', icono: repollo },
@@ -31,10 +28,10 @@ export const INGREDIENTES: { id: IngredienteId; nombre: string; icono: string }[
   { id: 'queso', nombre: 'Queso amarillo', icono: queso },
 ]
 
-export const BEBIDAS: { id: BebidaId; nombre: string; icono: string; precioUsd: number }[] = [
-  { id: 'nestea', nombre: 'Nestea', icono: nestea, precioUsd: 1.5 },
-  { id: 'coca', nombre: 'Coca-Cola', icono: coca, precioUsd: 1.5 },
-  { id: 'agua', nombre: 'Agua', icono: agua, precioUsd: 1.0 },
+export const BEBIDAS: { id: BebidaId; nombre: string; icono: string }[] = [
+  { id: 'nestea', nombre: 'Nestea', icono: nestea },
+  { id: 'coca', nombre: 'Coca-Cola', icono: coca },
+  { id: 'agua', nombre: 'Agua', icono: agua },
 ]
 
 export const METODOS_PAGO: { id: MetodoPago; nombre: string; icono: string | null; pideReferencia: boolean }[] = [

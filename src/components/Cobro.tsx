@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { almacen } from '../data'
-import { aBolivares, fmtBs, fmtNumero, fmtUsd, hora, quien, resumen } from '../domain/calculos'
+import { fmtBs, fmtNumero, fmtUsd, hora, quien, resumen } from '../domain/calculos'
 import { METODOS_PAGO } from '../domain/menu'
 import type { Comanda, EstadoComanda, MetodoPago } from '../domain/tipos'
 import { IconoTransferencia } from './IconoTransferencia'
@@ -31,7 +31,7 @@ export function TarjetaComanda({ c, children }: { c: Comanda; children?: React.R
               : `${resumen(c)} · ${hora(c.creadaEn)}`}
           </span>
         </span>
-        <span className="t">${fmtUsd(c.totalUsd)}<span className="d">Bs {fmtBs(aBolivares(c.totalUsd, c.tasa))}</span></span>
+        <span className="t">Bs {fmtBs(c.totalBs)}<span className="d">${fmtUsd(c.totalUsd)}</span></span>
       </div>
       {children}
     </div>

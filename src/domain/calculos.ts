@@ -1,5 +1,5 @@
-import { BEBIDAS, INGREDIENTES, PRECIO_PERRO_USD } from './menu'
-import type { Comanda, LineaPerro, NuevaComanda } from './tipos'
+import { BEBIDAS, INGREDIENTES } from './menu'
+import type { Comanda, Jornada, LineaPerro, NuevaComanda, Precios } from './tipos'
 
 export const esConTodo = (l: LineaPerro) =>
   INGREDIENTES.every(i => l.ingredientes.includes(i.id))
@@ -7,19 +7,33 @@ export const esConTodo = (l: LineaPerro) =>
 export const totalPerros = (perros: LineaPerro[]) =>
   perros.reduce((s, l) => s + (l.cant > 0 ? l.cant : 0), 0)
 
-export function totalUsd(c: Pick<NuevaComanda, 'perros' | 'bebidas'>): number {
-  const bebidas = BEBIDAS.reduce((s, b) => s + (c.bebidas[b.id] ?? 0) * b.precioUsd, 0)
-  return redondear(totalPerros(c.perros) * PRECIO_PERRO_USD + bebidas)
-}
-
 export const redondear = (n: number) => Math.round(n * 100) / 100
 
-export const aBolivares = (usd: number, tasa: number) => redondear(usd * tasa)
+/** Total de la comanda en bolívares con los precios del día. */
+export function totalBs(c: Pick<NuevaComanda, 'perros' | 'bebidas'>, precios: Precios): number {
+  const bebidas = BEBIDAS.reduce((s, b) => s + (c.bebidas[b.id] ?? 0) * (precios.bebidas[b.id] ?? 0), 0)
+  return redondear(totalPerros(c.perros) * precios.perro + bebidas)
+}
+
+export const aDolares = (bs: number, tasa: number) => (tasa > 0 ? redondear(bs / tasa) : 0)
 
 export const fmtUsd = (n: number) => n.toFixed(2)
 export const fmtBs = (n: number) =>
   n.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 export const fmtNumero = (n: number) => String(n).padStart(4, '0')
+
+/**
+ * Lee un número escrito como se acostumbra en Venezuela o con punto decimal:
+ * "1.250,50", "1250,5", "190.50" y "1.250" (miles) son válidos.
+ */
+export function leerNumero(texto: string): number {
+  let t = texto.trim().replace(/\s|Bs\.?|\$/gi, '')
+  if (!t) return 0
+  if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.')
+  else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '')
+  const n = Number(t)
+  return Number.isFinite(n) && n > 0 ? n : 0
+}
 
 export function nombreMesa(mesa: string): string {
   if (!mesa) return ''
@@ -54,7 +68,15 @@ export function validar(c: NuevaComanda): string | null {
   if (c.perros.some(l => l.cant > 0 && l.ingredientes.length === 0))
     return 'Marca los ingredientes de cada perro.'
   if (!c.nombre.trim() && !c.mesa) return 'Escribe el nombre del cliente o elige la mesa.'
-  if (!(c.tasa > 0)) return 'Escribe la tasa BCV del día.'
+  return null
+}
+
+/** Devuelve un mensaje de error, o null si la apertura está completa. */
+export function validarJornada(j: Pick<Jornada, 'tasa' | 'precios'>): string | null {
+  if (!(j.tasa > 0)) return 'Escribe la tasa BCV del día.'
+  if (!(j.precios.perro > 0)) return 'Escribe el precio del perro en bolívares.'
+  const falta = BEBIDAS.find(b => !(j.precios.bebidas[b.id] > 0))
+  if (falta) return `Escribe el precio de ${falta.nombre} en bolívares.`
   return null
 }
 

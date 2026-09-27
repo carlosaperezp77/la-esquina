@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { hoy, totalUsd } from '../domain/calculos'
-import type { Comanda, EstadoComanda, MetodoPago, NuevaComanda } from '../domain/tipos'
+import { aDolares, hoy, redondear, totalBs } from '../domain/calculos'
+import type { Comanda, EstadoComanda, Jornada, MetodoPago, NuevaComanda, Precios } from '../domain/tipos'
 import type { Almacen } from './almacen'
 
 interface Fila {
@@ -13,6 +13,7 @@ interface Fila {
   bebidas: Comanda['bebidas']
   observaciones: string
   tasa: number
+  total_bs: number | null
   total_usd: number
   estado: EstadoComanda
   creada_en: string
@@ -33,6 +34,8 @@ const aComanda = (f: Fila): Comanda => ({
   bebidas: f.bebidas,
   observaciones: f.observaciones,
   tasa: Number(f.tasa),
+  // Las comandas anteriores a la apertura en Bs solo guardaban el total en USD.
+  totalBs: f.total_bs != null ? Number(f.total_bs) : redondear(Number(f.total_usd) * Number(f.tasa)),
   totalUsd: Number(f.total_usd),
   estado: f.estado,
   creadaEn: f.creada_en,
@@ -41,6 +44,20 @@ const aComanda = (f: Fila): Comanda => ({
   pago: f.pago_metodo && f.cobrada_en
     ? { metodo: f.pago_metodo, referencia: f.pago_referencia, cobradaEn: f.cobrada_en }
     : null,
+})
+
+interface FilaJornada {
+  fecha: string
+  tasa: number
+  precios: Precios
+  abierta_en: string
+}
+
+const aJornada = (f: FilaJornada): Jornada => ({
+  fecha: f.fecha,
+  tasa: Number(f.tasa),
+  precios: f.precios,
+  abiertaEn: f.abierta_en,
 })
 
 /** Modo en línea: todos los equipos comparten la base de datos y se avisan por Realtime. */
@@ -62,15 +79,38 @@ export class AlmacenSupabase implements Almacen {
     return (data as Fila[]).map(aComanda)
   }
 
+  async ultimaJornada() {
+    const { data, error } = await this.db
+      .from('jornadas')
+      .select('*')
+      .order('fecha', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (error) throw error
+    return data ? aJornada(data as FilaJornada) : null
+  }
+
+  async abrirJornada(j: Omit<Jornada, 'abiertaEn'>) {
+    const { data, error } = await this.db
+      .from('jornadas')
+      .upsert({ fecha: j.fecha, tasa: j.tasa, precios: j.precios, abierta_en: new Date().toISOString() })
+      .select()
+      .single()
+    if (error) throw error
+    return aJornada(data as FilaJornada)
+  }
+
   suscribir(cb: () => void) {
     const canal = this.db
-      .channel('comandas')
+      .channel('la-esquina')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas' }, () => cb())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'jornadas' }, () => cb())
       .subscribe()
     return () => { void this.db.removeChannel(canal) }
   }
 
-  async crear(n: NuevaComanda) {
+  async crear(n: NuevaComanda, jornada: Jornada) {
+    const bs = totalBs(n, jornada.precios)
     // El número del día lo asigna la base de datos (ver la migración).
     const { data, error } = await this.db
       .from('comandas')
@@ -81,8 +121,9 @@ export class AlmacenSupabase implements Almacen {
         perros: n.perros.filter(l => l.cant > 0),
         bebidas: Object.fromEntries(Object.entries(n.bebidas).filter(([, v]) => v)),
         observaciones: n.observaciones.trim(),
-        tasa: n.tasa,
-        total_usd: totalUsd(n),
+        tasa: jornada.tasa,
+        total_bs: bs,
+        total_usd: aDolares(bs, jornada.tasa),
       })
       .select()
       .single()

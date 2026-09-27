@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react'
-import type { Comanda } from '../domain/tipos'
+import type { Comanda, Jornada } from '../domain/tipos'
 import { almacen } from '.'
 
-/** Lista de comandas que se actualiza sola cuando alguien cambia algo. */
+/** Comandas y apertura del día, que se actualizan solas cuando alguien cambia algo. */
 export function useComandas() {
   const [comandas, setComandas] = useState<Comanda[]>([])
+  const [ultimaJornada, setUltimaJornada] = useState<Jornada | null>(null)
+  const [cargado, setCargado] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let vivo = true
     const cargar = () =>
-      almacen.listar().then(
-        cs => { if (vivo) { setComandas(cs); setError(null) } },
+      Promise.all([almacen.listar(), almacen.ultimaJornada()]).then(
+        ([cs, j]) => { if (vivo) { setComandas(cs); setUltimaJornada(j); setCargado(true); setError(null) } },
         e => { if (vivo) setError(e instanceof Error ? e.message : String(e)) },
       )
     void cargar()
@@ -21,5 +23,5 @@ export function useComandas() {
     return () => { vivo = false; quitar(); clearInterval(intervalo) }
   }, [])
 
-  return { comandas, error }
+  return { comandas, ultimaJornada, cargado, error }
 }

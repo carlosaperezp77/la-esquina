@@ -1,34 +1,28 @@
 import { useState } from 'react'
 import { almacen } from '../data'
-import { aBolivares, esConTodo, fmtBs, fmtNumero, fmtUsd, totalUsd, validar } from '../domain/calculos'
+import { aDolares, esConTodo, fmtBs, fmtNumero, fmtUsd, totalBs, validar } from '../domain/calculos'
 import { BEBIDAS, INGREDIENTES, MESAS } from '../domain/menu'
-import type { BebidaId, IngredienteId, LineaPerro } from '../domain/tipos'
+import type { BebidaId, IngredienteId, Jornada, LineaPerro } from '../domain/tipos'
 import { Fecha, Hora } from './Reloj'
 import { useAhora } from './useAhora'
 
-const CLAVE_TASA = 'la-esquina:tasa'
 const FILAS_INICIALES = 4
 
 const filasVacias = () => Array.from({ length: FILAS_INICIALES }, (): LineaPerro => ({ cant: 0, ingredientes: [] }))
 
-function leerTasa(): string {
-  try { return localStorage.getItem(CLAVE_TASA) ?? '' } catch { return '' }
-}
-
 /** Toma de pedido con el diseño del prototipo. La usan caja y meseros. */
-export function FormularioComanda() {
+export function FormularioComanda({ jornada }: { jornada: Jornada }) {
   const ahora = useAhora()
   const [nombre, setNombre] = useState('')
   const [mesa, setMesa] = useState('')
   const [perros, setPerros] = useState<LineaPerro[]>(filasVacias)
   const [bebidas, setBebidas] = useState<Partial<Record<BebidaId, number>>>({})
   const [observaciones, setObservaciones] = useState('')
-  const [tasaTexto, setTasaTexto] = useState(leerTasa)
   const [mensaje, setMensaje] = useState<{ texto: string; ok: boolean } | null>(null)
   const [enviando, setEnviando] = useState(false)
 
-  const tasa = parseFloat(tasaTexto.replace(',', '.')) || 0
-  const usd = totalUsd({ perros, bebidas })
+  const bs = totalBs({ perros, bebidas }, jornada.precios)
+  const usd = aDolares(bs, jornada.tasa)
 
   const cambiarFila = (i: number, f: (l: LineaPerro) => LineaPerro) =>
     setPerros(ps => ps.map((l, j) => (j === i ? f(l) : l)))
@@ -48,23 +42,18 @@ export function FormularioComanda() {
   const cambiarBebida = (id: BebidaId, delta: number) =>
     setBebidas(b => ({ ...b, [id]: Math.max(0, (b[id] ?? 0) + delta) }))
 
-  const cambiarTasa = (v: string) => {
-    setTasaTexto(v)
-    try { localStorage.setItem(CLAVE_TASA, v) } catch { /* sin almacenamiento: se pide cada vez */ }
-  }
-
   const limpiar = () => {
     setNombre(''); setMesa(''); setPerros(filasVacias()); setBebidas({}); setObservaciones('')
   }
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault()
-    const nueva = { nombre, mesa, perros, bebidas, observaciones, tasa }
+    const nueva = { nombre, mesa, perros, bebidas, observaciones }
     const error = validar(nueva)
     if (error) return setMensaje({ texto: error, ok: false })
     setEnviando(true)
     try {
-      const c = await almacen.crear(nueva)
+      const c = await almacen.crear(nueva, jornada)
       setMensaje({ texto: `Comanda Nº ${fmtNumero(c.numero)} enviada a cocina. Queda por cobrar.`, ok: true })
       limpiar()
     } catch (err) {
@@ -154,14 +143,11 @@ export function FormularioComanda() {
             value={observaciones} onChange={e => setObservaciones(e.target.value)} />
         </section>
         <section className="panel monto">
-          <span className="lbl">Monto: $</span>
-          <span className="box val">{fmtUsd(usd)}</span>
+          <span className="lbl">Monto: Bs</span>
+          <span className="box val">{fmtBs(bs)}</span>
           <div className="bs">
-            <span>Bs <strong>{fmtBs(aBolivares(usd, tasa))}</strong></span>
-            <label>Tasa BCV{' '}
-              <input className="box" id="tasa" inputMode="decimal" placeholder="0,00" value={tasaTexto}
-                onChange={e => cambiarTasa(e.target.value)} />
-            </label>
+            <span>$ <strong>{fmtUsd(usd)}</strong></span>
+            <span>Tasa BCV {fmtBs(jornada.tasa)}</span>
           </div>
         </section>
       </div>

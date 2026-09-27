@@ -1,8 +1,9 @@
-import { hoy, totalUsd } from '../domain/calculos'
-import type { Comanda, EstadoComanda, MetodoPago, NuevaComanda } from '../domain/tipos'
+import { aDolares, hoy, totalBs } from '../domain/calculos'
+import type { Comanda, EstadoComanda, Jornada, MetodoPago, NuevaComanda } from '../domain/tipos'
 import type { Almacen } from './almacen'
 
 const CLAVE = 'la-esquina:comandas'
+const CLAVE_JORNADAS = 'la-esquina:jornadas'
 
 /**
  * Modo demo: guarda en este navegador y avisa a las otras pestañas del mismo
@@ -20,20 +21,35 @@ export class AlmacenLocal implements Almacen {
     this.storage = storage
     this.canal?.addEventListener('message', () => this.avisar(false))
     if (typeof window !== 'undefined')
-      window.addEventListener('storage', e => { if (e.key === CLAVE) this.avisar(false) })
+      window.addEventListener('storage', e => { if (e.key === CLAVE || e.key === CLAVE_JORNADAS) this.avisar(false) })
   }
 
-  private leer(): Comanda[] {
+  private leerDe<T>(clave: string): T[] {
     try {
-      return JSON.parse(this.storage.getItem(CLAVE) ?? '[]') as Comanda[]
+      return JSON.parse(this.storage.getItem(clave) ?? '[]') as T[]
     } catch {
       return []
     }
   }
 
+  private leer() { return this.leerDe<Comanda>(CLAVE) }
+
   private guardar(cs: Comanda[]) {
     this.storage.setItem(CLAVE, JSON.stringify(cs))
     this.avisar(true)
+  }
+
+  async ultimaJornada() {
+    const js = this.leerDe<Jornada>(CLAVE_JORNADAS)
+    return js.reduce<Jornada | null>((u, j) => (!u || j.fecha > u.fecha ? j : u), null)
+  }
+
+  async abrirJornada(j: Omit<Jornada, 'abiertaEn'>) {
+    const nueva: Jornada = { ...j, abiertaEn: new Date().toISOString() }
+    const js = this.leerDe<Jornada>(CLAVE_JORNADAS).filter(x => x.fecha !== j.fecha)
+    this.storage.setItem(CLAVE_JORNADAS, JSON.stringify([...js, nueva]))
+    this.avisar(true)
+    return nueva
   }
 
   private avisar(difundir: boolean) {
@@ -51,7 +67,7 @@ export class AlmacenLocal implements Almacen {
     return () => { this.oyentes.delete(cb) }
   }
 
-  async crear(n: NuevaComanda) {
+  async crear(n: NuevaComanda, jornada: Jornada) {
     const cs = this.leer()
     const fecha = hoy()
     const numero = cs.filter(c => c.fecha === fecha).reduce((m, c) => Math.max(m, c.numero), 0) + 1
@@ -64,8 +80,9 @@ export class AlmacenLocal implements Almacen {
       perros: n.perros.filter(l => l.cant > 0),
       bebidas: Object.fromEntries(Object.entries(n.bebidas).filter(([, v]) => v)),
       observaciones: n.observaciones.trim(),
-      tasa: n.tasa,
-      totalUsd: totalUsd(n),
+      tasa: jornada.tasa,
+      totalBs: totalBs(n, jornada.precios),
+      totalUsd: aDolares(totalBs(n, jornada.precios), jornada.tasa),
       estado: 'nueva',
       creadaEn: new Date().toISOString(),
       listaEn: null,

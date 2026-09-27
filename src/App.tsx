@@ -27,7 +27,7 @@ function rolGuardado(): Rol | null {
 
 export default function App() {
   const [rol, setRol] = useState<Rol | null>(() => rolDeHash() ?? rolGuardado())
-  const { comandas, error } = useComandas()
+  const { comandas, ultimaJornada, cargado, error } = useComandas()
 
   useEffect(() => {
     const alCambiar = () => setRol(rolDeHash())
@@ -45,12 +45,12 @@ export default function App() {
 
   return (
     <>
-      <Encabezado rol={rol} numero={rol === 'caja' ? fmtNumero(proximo) : undefined} />
+      <Encabezado rol={rol} numero={rol === 'caja' && ultimaJornada?.fecha === hoy() ? fmtNumero(proximo) : undefined} />
       <main>
         {error && <p className="wrap msg err" role="alert">No hay conexión con los datos: {error}</p>}
-        {rol === 'caja' && <Caja comandas={comandas} />}
+        {rol === 'caja' && cargado && <Caja comandas={comandas} ultimaJornada={ultimaJornada} />}
         {rol === 'cocina' && <Cocina comandas={comandas} />}
-        {rol === 'mesero' && <Mesero comandas={comandas} />}
+        {rol === 'mesero' && <Mesero comandas={comandas} ultimaJornada={ultimaJornada} />}
         {!rol && <Inicio />}
       </main>
     </>

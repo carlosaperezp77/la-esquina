@@ -34,6 +34,8 @@ export interface Comanda {
   observaciones: string
   /** Bs por USD usada al crear la comanda. */
   tasa: number
+  totalBs: number
+  /** Equivalente en USD a la tasa de la comanda. */
   totalUsd: number
   estado: EstadoComanda
   creadaEn: string
@@ -48,5 +50,19 @@ export interface NuevaComanda {
   perros: LineaPerro[]
   bebidas: Partial<Record<BebidaId, number>>
   observaciones: string
+}
+
+/** Precios de venta en bolívares que fija el cajero al abrir el día. */
+export interface Precios {
+  perro: number
+  bebidas: Record<BebidaId, number>
+}
+
+/** Apertura del día: tasa BCV y precios en Bs. Una por fecha. */
+export interface Jornada {
+  fecha: string // AAAA-MM-DD
+  /** Bs por USD, tasa BCV del día. */
   tasa: number
+  precios: Precios
+  abiertaEn: string
 }
