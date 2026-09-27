@@ -1,0 +1,176 @@
+import { useState } from 'react'
+import { almacen } from '../data'
+import { aBolivares, esConTodo, fmtBs, fmtNumero, fmtUsd, totalUsd, validar } from '../domain/calculos'
+import { BEBIDAS, INGREDIENTES, MESAS } from '../domain/menu'
+import type { BebidaId, IngredienteId, LineaPerro } from '../domain/tipos'
+import { Fecha, Hora } from './Reloj'
+import { useAhora } from './useAhora'
+
+const CLAVE_TASA = 'la-esquina:tasa'
+const FILAS_INICIALES = 4
+
+const filasVacias = () => Array.from({ length: FILAS_INICIALES }, (): LineaPerro => ({ cant: 0, ingredientes: [] }))
+
+function leerTasa(): string {
+  try { return localStorage.getItem(CLAVE_TASA) ?? '' } catch { return '' }
+}
+
+/** Toma de pedido con el diseño del prototipo. La usan caja y meseros. */
+export function FormularioComanda() {
+  const ahora = useAhora()
+  const [nombre, setNombre] = useState('')
+  const [mesa, setMesa] = useState('')
+  const [perros, setPerros] = useState<LineaPerro[]>(filasVacias)
+  const [bebidas, setBebidas] = useState<Partial<Record<BebidaId, number>>>({})
+  const [observaciones, setObservaciones] = useState('')
+  const [tasaTexto, setTasaTexto] = useState(leerTasa)
+  const [mensaje, setMensaje] = useState<{ texto: string; ok: boolean } | null>(null)
+  const [enviando, setEnviando] = useState(false)
+
+  const tasa = parseFloat(tasaTexto.replace(',', '.')) || 0
+  const usd = totalUsd({ perros, bebidas })
+
+  const cambiarFila = (i: number, f: (l: LineaPerro) => LineaPerro) =>
+    setPerros(ps => ps.map((l, j) => (j === i ? f(l) : l)))
+
+  const conCantidad = (l: LineaPerro): LineaPerro => (l.cant ? l : { ...l, cant: 1 })
+
+  const alternarIngrediente = (i: number, id: IngredienteId) =>
+    cambiarFila(i, l => l.ingredientes.includes(id)
+      ? { ...l, ingredientes: l.ingredientes.filter(x => x !== id) }
+      : conCantidad({ ...l, ingredientes: [...l.ingredientes, id] }))
+
+  const alternarTodo = (i: number) =>
+    cambiarFila(i, l => esConTodo(l)
+      ? { ...l, ingredientes: [] }
+      : conCantidad({ ...l, ingredientes: INGREDIENTES.map(x => x.id) }))
+
+  const cambiarBebida = (id: BebidaId, delta: number) =>
+    setBebidas(b => ({ ...b, [id]: Math.max(0, (b[id] ?? 0) + delta) }))
+
+  const cambiarTasa = (v: string) => {
+    setTasaTexto(v)
+    try { localStorage.setItem(CLAVE_TASA, v) } catch { /* sin almacenamiento: se pide cada vez */ }
+  }
+
+  const limpiar = () => {
+    setNombre(''); setMesa(''); setPerros(filasVacias()); setBebidas({}); setObservaciones('')
+  }
+
+  const enviar = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const nueva = { nombre, mesa, perros, bebidas, observaciones, tasa }
+    const error = validar(nueva)
+    if (error) return setMensaje({ texto: error, ok: false })
+    setEnviando(true)
+    try {
+      const c = await almacen.crear(nueva)
+      setMensaje({ texto: `Comanda Nº ${fmtNumero(c.numero)} enviada a cocina. Queda por cobrar.`, ok: true })
+      limpiar()
+    } catch (err) {
+      setMensaje({ texto: `No se pudo enviar: ${err instanceof Error ? err.message : String(err)}. Revisa la conexión e intenta de nuevo.`, ok: false })
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  return (
+    <form className="wrap" onSubmit={enviar} noValidate style={{ width: '100%' }}>
+      <div className="meta">
+        <label className="field grow">
+          <span className="lbl">Nombre:</span>
+          <input className="box" id="nombre" autoComplete="off" value={nombre} onChange={e => setNombre(e.target.value)} />
+        </label>
+        <label className="field">
+          <span className="lbl">Mesa:</span>
+          <select className="box" id="mesa" value={mesa} onChange={e => setMesa(e.target.value)}>
+            <option value="">—</option>
+            {MESAS.map(m => <option key={m} value={m}>{m}</option>)}
+            <option value="LL">Para llevar</option>
+          </select>
+        </label>
+        <div className="field"><span className="lbl">Fecha:</span><Fecha ahora={ahora} /></div>
+        <div className="field"><span className="lbl">Hora:</span><Hora ahora={ahora} /></div>
+      </div>
+
+      <div className="gridwrap">
+        <div className="grid">
+          <div className="col cant">
+            <h4>CANT.</h4><div className="ic" />
+            {perros.map((l, i) => (
+              <input key={i} type="number" min={0} max={20} className="qty" id={`cant${i}`}
+                aria-label={`Cantidad fila ${i + 1}`} value={l.cant || ''}
+                onChange={e => cambiarFila(i, x => ({ ...x, cant: Math.max(0, Math.min(20, parseInt(e.target.value) || 0)) }))} />
+            ))}
+          </div>
+          <div className="col todo">
+            <h4>Con<br />todo</h4><div className="ic txt">TODO</div>
+            {perros.map((l, i) => (
+              <button key={i} type="button" className="sq" aria-pressed={esConTodo(l)}
+                aria-label={`Con todo fila ${i + 1}`} onClick={() => alternarTodo(i)} />
+            ))}
+          </div>
+          {INGREDIENTES.map(ing => (
+            <div className="col" key={ing.id}>
+              <h4>{ing.nombre.split(' ').reduce<React.ReactNode[]>((a, w, k) => k ? [...a, <br key={k} />, w] : [w], [])}</h4>
+              <div className="ic"><img src={ing.icono} alt="" /></div>
+              {perros.map((l, i) => (
+                <button key={i} type="button" className="sq" aria-pressed={l.ingredientes.includes(ing.id)}
+                  aria-label={`${ing.nombre} fila ${i + 1}`} onClick={() => alternarIngrediente(i, ing.id)} />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+      {perros.length < 10 && (
+        <button type="button" className="addrow" onClick={() => setPerros(ps => [...ps, { cant: 0, ingredientes: [] }])}>
+          + Agregar perro
+        </button>
+      )}
+
+      <div className="bottom">
+        <section className="panel">
+          <span className="lbl">Bebidas</span>
+          <div className="opts">
+            {BEBIDAS.map(b => {
+              const n = bebidas[b.id] ?? 0
+              return (
+                <div className="opt" key={b.id}>
+                  <button type="button" className="big" aria-label={`Agregar ${b.nombre}`} onClick={() => cambiarBebida(b.id, 1)}>
+                    <img src={b.icono} alt="" />
+                  </button>
+                  <div className="stepper">
+                    <button type="button" className="mini" aria-label={`Quitar ${b.nombre}`} hidden={!n} onClick={() => cambiarBebida(b.id, -1)}>−</button>
+                    <span className={`bqty${n ? ' on' : ''}`}>{n || ''}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+        <section className="panel">
+          <label className="lbl" htmlFor="obs" style={{ fontSize: 19 }}>Observaciones:</label>
+          <textarea className="box" id="obs" placeholder="Ej.: sin picante, perro 2 bien tostado"
+            value={observaciones} onChange={e => setObservaciones(e.target.value)} />
+        </section>
+        <section className="panel monto">
+          <span className="lbl">Monto: $</span>
+          <span className="box val">{fmtUsd(usd)}</span>
+          <div className="bs">
+            <span>Bs <strong>{fmtBs(aBolivares(usd, tasa))}</strong></span>
+            <label>Tasa BCV{' '}
+              <input className="box" id="tasa" inputMode="decimal" placeholder="0,00" value={tasaTexto}
+                onChange={e => cambiarTasa(e.target.value)} />
+            </label>
+          </div>
+        </section>
+      </div>
+
+      <div className="send">
+        <span className={`msg ${mensaje?.ok ? 'ok' : 'err'}`} role="status">{mensaje?.texto}</span>
+        <button type="button" className="btn ghost" onClick={() => { limpiar(); setMensaje(null) }}>Limpiar</button>
+        <button type="submit" className="btn" disabled={enviando}>{enviando ? 'Enviando…' : 'Enviar a cocina'}</button>
+      </div>
+    </form>
+  )
+}
