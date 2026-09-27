@@ -1,0 +1,32 @@
+name: Publicar
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: publicar
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    env:
+      VITE_BASE: /la-esquina/
+      # Datos públicos del proyecto de Supabase (la clave publishable está hecha para el navegador).
+      VITE_SUPABASE_URL: https://xrlndffypfmwtsnanmiz.supabase.co
+      VITE_SUPABASE_ANON_KEY: sb_publishable_ayvGBoxRNFRn6OtxBV88eA_nWuKhHPJ
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Subir a la rama gh-pages
+        run: |
+          cd dist
+          touch .nojekyll
+          git init -q -b gh-pages
+          git add -A
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -q -m "Publicar ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" gh-pages

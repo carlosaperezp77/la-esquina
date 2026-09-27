@@ -31,6 +31,11 @@ Sin configuración corre en **modo demo**: los datos quedan solo en ese navegado
 
 > La etapa 1 deja la tabla abierta a quien tenga la clave pública. Antes de usarla en el local se agrega inicio de sesión por rol.
 
+## Publicación
+
+Cada cambio que entra a `main` se publica solo en GitHub Pages:
+https://carlosaperezp77.github.io/la-esquina/ (flujo `.github/workflows/publicar.yml`, rama `gh-pages`).
+
 ## Comandos
 
 | Comando | Para qué |
