@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { almacen } from '../data'
 import { fmtBs, fmtNumero, fmtUsd, hora, leerNumero, redondear } from '../domain/calculos'
 import { INSUMOS, METODOS_PAGO } from '../domain/menu'
+import { deberiaQuedar, usado } from '../domain/inventario'
 import { efectivoEsperado, resumenDia } from '../domain/reporte'
 import type { Cierre, Comanda, InsumoId, Inventario, Jornada, ResumenDia } from '../domain/tipos'
 import { ControlDiario } from './ControlDiario'
@@ -54,7 +55,7 @@ export function Reporte({ comandas, jornada, cierre }: { comandas: Comanda[]; jo
         </section>
       )}
 
-      {cierre ? <ResultadoCierre cierre={cierre} /> : <FormularioCierre r={r} jornada={jornada} />}
+      {cierre ? <ResultadoCierre cierre={cierre} /> : <FormularioCierre r={r} jornada={jornada} comandas={comandas} />}
     </div>
   )
 }
@@ -66,7 +67,8 @@ function Diferencia({ contado, esperado, moneda }: { contado: number; esperado: 
   return <span className={`dif ${d > 0 ? 'sobra' : 'falta'}`}>{d > 0 ? 'Sobra' : 'Falta'} {f(d)}</span>
 }
 
-function FormularioCierre({ r, jornada }: { r: ResumenDia; jornada: Jornada }) {
+function FormularioCierre({ r, jornada, comandas }: { r: ResumenDia; jornada: Jornada; comandas: Comanda[] }) {
+  const queda = deberiaQuedar(jornada.inventario ?? {}, usado(comandas, jornada.fecha))
   const [inventario, setInventario] = useState<Record<InsumoId, string>>(() =>
     Object.fromEntries(INSUMOS.map(i => [i.id, ''])) as Record<InsumoId, string>)
   const [fondoBs, setFondoBs] = useState('')
@@ -145,7 +147,13 @@ function FormularioCierre({ r, jornada }: { r: ResumenDia; jornada: Jornada }) {
       <div className="inventario">
         {INSUMOS.map(i => (
           <label className="insumo" key={i.id} htmlFor={`fin-${i.id}`}>
-            <span>{i.nombre}<small className="entregado">Entregado: {jornada.inventario?.[i.id] ?? 0}</small></span>
+            <span>{i.nombre}
+              <small className="entregado">
+                Entregado: {jornada.inventario?.[i.id] ?? 0}
+                {queda[i.id] !== undefined && <> · Debería quedar: <b>{queda[i.id]}</b></>}
+              </small>
+              {queda[i.id] !== undefined && inventario[i.id].trim() !== '' && <DifInsumo contado={leerNumero(inventario[i.id])} esperado={queda[i.id]!} />}
+            </span>
             <input className="box" id={`fin-${i.id}`} inputMode="decimal" placeholder="0" value={inventario[i.id]}
               onChange={e => { setInventario(x => ({ ...x, [i.id]: e.target.value })); setError(''); setConfirmar(false) }} />
           </label>
@@ -164,6 +172,12 @@ function FormularioCierre({ r, jornada }: { r: ResumenDia; jornada: Jornada }) {
       </div>
     </form>
   )
+}
+
+function DifInsumo({ contado, esperado }: { contado: number; esperado: number }) {
+  const d = redondear(contado - esperado)
+  if (d === 0) return <span className="dif ok">Cuadra</span>
+  return <span className={`dif ${d > 0 ? 'sobra' : 'falta'}`}>{d > 0 ? `Sobran ${d}` : `Faltan ${-d}`}</span>
 }
 
 function ResultadoCierre({ cierre }: { cierre: Cierre }) {

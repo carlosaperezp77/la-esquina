@@ -25,7 +25,7 @@
 .cd-sabores .cd-corazon { color: var(--cd-negro); }
 
 /* Fecha, precios e inventario */
-.cd-arriba { display: grid; grid-template-columns: 1fr 1.1fr; gap: 14px; align-items: start; }
+.cd-arriba { display: flex; flex-direction: column; gap: 10px; }
 .cd-izq { display: flex; flex-direction: column; gap: 10px; }
 .cd-fecha { display: flex; align-items: baseline; gap: 6px; font-size: 18px; flex-wrap: wrap; }
 .cd-fecha b { text-transform: uppercase; }
@@ -35,7 +35,7 @@
 .cd-caja h3 { margin: 0; text-align: center; font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 4px 6px; }
 .cd-precios h3 { background: var(--cd-amarillo); }
 .cd-precios { background: #fdf8dc; }
-.cd-precios-fila { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 6px; padding: 8px; }
+.cd-precios-fila { display: grid; grid-template-columns: repeat(auto-fit, minmax(122px, 1fr)); gap: 6px; padding: 8px; }
 .cd-precios-fila > div { display: grid; grid-template-columns: 38px 1fr; grid-template-rows: auto auto; gap: 2px 4px; align-items: center; }
 .cd-precios-fila img, .cd-precios-fila svg { grid-row: span 2; width: 38px; height: 38px; object-fit: contain; }
 .cd-precios-fila small { font-size: 10.5px; font-weight: 700; text-transform: uppercase; line-height: 1.05; }
@@ -45,7 +45,13 @@
 .cd-inventario table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .cd-inventario th { font-size: 10.5px; text-transform: uppercase; background: #f1f7ef; padding: 3px 4px; border-bottom: 1px solid #c9c9c9; }
 .cd-inventario td { padding: 2px 5px; border-bottom: 1px solid #e3e3e3; height: 19px; }
-.cd-inventario td:nth-child(3) { border-right: 1px solid #c9c9c9; }
+.cd-inventario td:nth-child(6) { border-right: 1.5px solid #9a9a9a; }
+.cd-inventario th:nth-child(6) { border-right: 1.5px solid #9a9a9a; }
+.cd-inventario th { line-height: 1.05; }
+.cd-auto { background: #f4f9f2; color: #3c5a34; }
+.cd-dif.falta { color: #b23b2e; font-weight: 700; }
+.cd-dif.sobra { color: #2d5f96; font-weight: 700; }
+.cd-nota-inv { margin: 0; padding: 4px 8px; font-size: 11px; color: #666; border-top: 1px solid #e3e3e3; }
 .cd-num { text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
 
 /* Título */
@@ -112,7 +118,9 @@
   .cd-hoja { padding: 12px 12px 0; }
   .cd-banner { grid-template-columns: 1fr auto; }
   .cd-lema, .cd-derecha { display: none; }
-  .cd-arriba, .cd-abajo { grid-template-columns: 1fr; }
+  .cd-abajo { grid-template-columns: 1fr; }
+  .cd-inventario { overflow-x: auto; }
+  .cd-inventario table { min-width: 720px; }
   .cd-titulo h2 { font-size: 26px; }
   .cd-pie { flex-direction: column; }
   .cd-franjas { margin: 0 -12px; }
@@ -120,7 +128,7 @@
 
 @media print {
   @page { size: letter; margin: 10mm; }
-  .cd-hoja { box-shadow: none; max-width: none; width: 980px; padding: 0; zoom: .72; gap: 8px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .cd-hoja { box-shadow: none; max-width: none; width: 980px; padding: 0; zoom: .66; gap: 8px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .cd-tabla td { height: 17px; padding: 0 4px; }
   .cd-obs p { min-height: 90px; }
   .cd-tabla { min-width: 0; }

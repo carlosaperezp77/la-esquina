@@ -4,7 +4,12 @@ import { FormularioComanda } from '../components/FormularioComanda'
 import { PorCobrar, TarjetaComanda } from '../components/Cobro'
 import { Reporte } from '../components/Reporte'
 import { fmtBs, fmtUsd, hora, hoy } from '../domain/calculos'
+import { deberiaQuedar, usado } from '../domain/inventario'
+import { INSUMOS } from '../domain/menu'
 import type { Cierre, Comanda, Jornada } from '../domain/tipos'
+
+/** Desde cuántas unidades se avisa que queda poco. */
+const POCAS_UNIDADES = 3
 
 interface Props { comandas: Comanda[]; ultimaJornada: Jornada | null; cierreHoy: Cierre | null }
 
@@ -50,6 +55,7 @@ export function Caja({ comandas, ultimaJornada, cierreHoy }: Props) {
         <span>Tasa BCV de hoy: <b>Bs {fmtBs(jornada.tasa)}</b> por $1 · abierta a las {hora(jornada.abiertaEn)}</span>
         <button type="button" onClick={() => setEditando(true)}>Cambiar tasa, precios o inventario</button>
       </div>
+      <AvisoExistencias jornada={jornada} comandas={comandas} />
       {Object.keys(jornada.inventario ?? {}).length === 0 && (
         <div className="alerta aviso-inv">
           <span>Falta declarar el inventario entregado para hoy.</span>
@@ -78,5 +84,17 @@ export function Caja({ comandas, ultimaJornada, cierreHoy }: Props) {
         </section>
       )}
     </div>
+  )
+}
+
+/** Avisa cuando a un insumo que se descuenta solo le quedan pocas unidades. */
+function AvisoExistencias({ jornada, comandas }: { jornada: Jornada; comandas: Comanda[] }) {
+  const queda = deberiaQuedar(jornada.inventario ?? {}, usado(comandas, jornada.fecha))
+  const pocos = INSUMOS.filter(i => queda[i.id] !== undefined && queda[i.id]! <= POCAS_UNIDADES && (jornada.inventario?.[i.id] ?? 0) > 0)
+  if (pocos.length === 0) return null
+  return (
+    <p className="alerta">
+      Quedan pocos: {pocos.map(i => `${i.nombre} (${Math.max(0, queda[i.id]!)})`).join(', ')}.
+    </p>
   )
 }

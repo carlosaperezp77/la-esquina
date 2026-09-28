@@ -1,5 +1,7 @@
+import { Fragment } from 'react'
 import { fmtBs, fmtNumero, fmtUsd, totalPerros } from '../domain/calculos'
 import { BEBIDAS, INSUMOS } from '../domain/menu'
+import { deberiaQuedar, usado } from '../domain/inventario'
 import { totalMetodoBs } from '../domain/reporte'
 import type { BebidaId, Comanda, Inventario, Jornada, MetodoPago, ResumenDia } from '../domain/tipos'
 import perroBanner from '../assets/reporte/perro.png'
@@ -75,13 +77,24 @@ export function ControlDiario({ jornada, comandas, resumen: r, inventarioFinal, 
   const mitad = Math.ceil(INSUMOS.length / 2)
   const efectivoUsd = r.porMetodo.find(v => v.metodo === 'efectivo' && v.moneda === 'usd')
 
-  const filaInsumo = (i: (typeof INSUMOS)[number]) => (
-    <>
-      <td>{i.nombre}</td>
-      <td className="cd-num">{num(jornada.inventario?.[i.id])}</td>
-      <td className="cd-num">{inventarioFinal ? num(inventarioFinal[i.id]) : ''}</td>
-    </>
-  )
+  const entregado = jornada.inventario ?? {}
+  const vendido = usado(comandas, jornada.fecha)
+  const queda = deberiaQuedar(entregado, vendido)
+
+  const filaInsumo = (i: (typeof INSUMOS)[number]) => {
+    const final = inventarioFinal?.[i.id]
+    const dif = final !== undefined && queda[i.id] !== undefined ? final - queda[i.id]! : undefined
+    return (
+      <>
+        <td>{i.nombre}</td>
+        <td className="cd-num">{num(entregado[i.id])}</td>
+        <td className={`cd-num${queda[i.id] !== undefined ? ' cd-auto' : ''}`}>{num(vendido[i.id])}</td>
+        <td className={`cd-num${queda[i.id] !== undefined ? ' cd-auto' : ''}`}>{num(queda[i.id])}</td>
+        <td className="cd-num">{num(final)}</td>
+        <td className={`cd-num cd-dif${dif ? (dif < 0 ? ' falta' : ' sobra') : ''}`}>{dif === undefined ? '' : dif > 0 ? `+${num(dif)}` : num(dif)}</td>
+      </>
+    )
+  }
 
   return (
     <article className="cd-hoja" aria-label="Control diario de caja">
@@ -103,13 +116,12 @@ export function ControlDiario({ jornada, comandas, resumen: r, inventarioFinal, 
       </header>
 
       <section className="cd-arriba">
-        <div className="cd-izq">
-          <div className="cd-fecha">
+        <div className="cd-fecha">
             <b>Fecha:</b>
             <span className="cd-linea">{f.d}</span>/<span className="cd-linea">{f.m}</span>/<span className="cd-linea">{f.a}</span>
             <span className="cd-tasa">Tasa BCV: Bs {fmtBs(jornada.tasa)}</span>
-          </div>
-          <div className="cd-caja cd-precios">
+        </div>
+        <div className="cd-caja cd-precios">
             <h3>Precios del día</h3>
             <div className="cd-precios-fila">
               <div><img src={perroBanner} alt="" /><small>Precio del perro caliente</small><span>Bs. <u>{fmtBs(jornada.precios.perro)}</u></span></div>
@@ -118,18 +130,20 @@ export function ControlDiario({ jornada, comandas, resumen: r, inventarioFinal, 
               ))}
               <div><IconoEnvase /><small>Envase para llevar</small><span>Bs. <u>{fmtBs(jornada.precios.envase ?? 0)}</u></span></div>
             </div>
-          </div>
         </div>
         <div className="cd-caja cd-inventario">
           <h3>Inventario entregado para el día</h3>
           <table>
-            <thead><tr><th>Insumo</th><th>Entregado</th><th>Final</th><th>Insumo</th><th>Entregado</th><th>Final</th></tr></thead>
+            <thead><tr>{[0, 1].map(k => (
+              <Fragment key={k}><th>Insumo</th><th>Entregado</th><th>Vendido</th><th>Debería quedar</th><th>Final</th><th>Diferencia</th></Fragment>
+            ))}</tr></thead>
             <tbody>
               {INSUMOS.slice(0, mitad).map((i, k) => (
-                <tr key={i.id}>{filaInsumo(i)}{INSUMOS[mitad + k] ? filaInsumo(INSUMOS[mitad + k]) : <><td /><td /><td /></>}</tr>
+                <tr key={i.id}>{filaInsumo(i)}{INSUMOS[mitad + k] ? filaInsumo(INSUMOS[mitad + k]) : <><td /><td /><td /><td /><td /><td /></>}</tr>
               ))}
             </tbody>
           </table>
+          <p className="cd-nota-inv">Vendido y Debería quedar los calcula la app con las comandas: 1 pan por perro, 1 salchicha por perro que la lleva y 1 unidad por bebida.</p>
         </div>
       </section>
 
