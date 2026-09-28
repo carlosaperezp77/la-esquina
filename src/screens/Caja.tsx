@@ -48,8 +48,14 @@ export function Caja({ comandas, ultimaJornada, cierreHoy }: Props) {
       {pestanas}
       <div className="tasa-dia">
         <span>Tasa BCV de hoy: <b>Bs {fmtBs(jornada.tasa)}</b> por $1 · abierta a las {hora(jornada.abiertaEn)}</span>
-        <button type="button" onClick={() => setEditando(true)}>Cambiar tasa o precios</button>
+        <button type="button" onClick={() => setEditando(true)}>Cambiar tasa, precios o inventario</button>
       </div>
+      {Object.keys(jornada.inventario ?? {}).length === 0 && (
+        <div className="alerta aviso-inv">
+          <span>Falta declarar el inventario entregado para hoy.</span>
+          <button type="button" className="btn sm" onClick={() => setEditando(true)}>Declarar inventario</button>
+        </div>
+      )}
 
       <FormularioComanda jornada={jornada} />
 

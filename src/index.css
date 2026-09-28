@@ -247,3 +247,4 @@ textarea.box { width: 100%; min-height: 78px; resize: vertical; font-size: 17px;
   main, .wrap { padding: 0 !important; margin: 0 !important; }
 }
 .big img.foto, .ic img.foto { object-fit: contain; border-radius: 0; }
+.aviso-inv { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
