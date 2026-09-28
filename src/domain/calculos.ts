@@ -10,9 +10,9 @@ export const totalPerros = (perros: LineaPerro[]) =>
 export const redondear = (n: number) => Math.round(n * 100) / 100
 
 /** Total de la comanda en bolívares con los precios del día. */
-export function totalBs(c: Pick<NuevaComanda, 'perros' | 'bebidas'>, precios: Precios): number {
+export function totalBs(c: Pick<NuevaComanda, 'perros' | 'bebidas' | 'envases'>, precios: Precios): number {
   const bebidas = BEBIDAS.reduce((s, b) => s + (c.bebidas[b.id] ?? 0) * (precios.bebidas[b.id] ?? 0), 0)
-  return redondear(totalPerros(c.perros) * precios.perro + bebidas)
+  return redondear(totalPerros(c.perros) * precios.perro + bebidas + (c.envases ?? 0) * (precios.envase ?? 0))
 }
 
 export const aDolares = (bs: number, tasa: number) => (tasa > 0 ? redondear(bs / tasa) : 0)
@@ -44,7 +44,7 @@ export const quien = (c: Pick<Comanda, 'nombre' | 'mesa'>) =>
   [c.nombre, nombreMesa(c.mesa)].filter(Boolean).join(' · ')
 
 /** Resumen corto: "3 perros (2 con todo), 1 Agua". */
-export function resumen(c: Pick<Comanda, 'perros' | 'bebidas'>): string {
+export function resumen(c: Pick<Comanda, 'perros' | 'bebidas' | 'envases'>): string {
   const n = totalPerros(c.perros)
   const conTodo = totalPerros(c.perros.filter(esConTodo))
   let perros = ''
@@ -54,7 +54,8 @@ export function resumen(c: Pick<Comanda, 'perros' | 'bebidas'>): string {
     else if (conTodo) perros += ` (${conTodo} con todo)`
   }
   const bebidas = BEBIDAS.filter(b => c.bebidas[b.id]).map(b => `${c.bebidas[b.id]} ${b.nombre}`)
-  return [perros, ...bebidas].filter(Boolean).join(', ')
+  const envases = c.envases ? `${c.envases} envase${c.envases > 1 ? 's' : ''}` : ''
+  return [perros, ...bebidas, envases].filter(Boolean).join(', ')
 }
 
 /** Ingredientes que le faltan a una línea respecto a "con todo", para cocina. */
@@ -77,6 +78,7 @@ export function validarJornada(j: Pick<Jornada, 'tasa' | 'precios'>): string | n
   if (!(j.precios.perro > 0)) return 'Escribe el precio del perro en bolívares.'
   const falta = BEBIDAS.find(b => !(j.precios.bebidas[b.id] > 0))
   if (falta) return `Escribe el precio de ${falta.nombre} en bolívares.`
+  if (!(j.precios.envase > 0)) return 'Escribe el precio del envase para llevar en bolívares.'
   return null
 }
 

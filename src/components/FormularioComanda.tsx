@@ -3,6 +3,7 @@ import { almacen } from '../data'
 import { aDolares, esConTodo, fmtBs, fmtNumero, fmtUsd, totalBs, validar } from '../domain/calculos'
 import { BEBIDAS, INGREDIENTES, MESAS } from '../domain/menu'
 import type { BebidaId, IngredienteId, Jornada, LineaPerro } from '../domain/tipos'
+import { IconoEnvase } from './Iconos'
 import { Fecha, Hora } from './Reloj'
 import { useAhora } from './useAhora'
 
@@ -17,11 +18,12 @@ export function FormularioComanda({ jornada }: { jornada: Jornada }) {
   const [mesa, setMesa] = useState('')
   const [perros, setPerros] = useState<LineaPerro[]>(filasVacias)
   const [bebidas, setBebidas] = useState<Partial<Record<BebidaId, number>>>({})
+  const [envases, setEnvases] = useState(0)
   const [observaciones, setObservaciones] = useState('')
   const [mensaje, setMensaje] = useState<{ texto: string; ok: boolean } | null>(null)
   const [enviando, setEnviando] = useState(false)
 
-  const bs = totalBs({ perros, bebidas }, jornada.precios)
+  const bs = totalBs({ perros, bebidas, envases }, jornada.precios)
   const usd = aDolares(bs, jornada.tasa)
 
   const cambiarFila = (i: number, f: (l: LineaPerro) => LineaPerro) =>
@@ -43,12 +45,12 @@ export function FormularioComanda({ jornada }: { jornada: Jornada }) {
     setBebidas(b => ({ ...b, [id]: Math.max(0, (b[id] ?? 0) + delta) }))
 
   const limpiar = () => {
-    setNombre(''); setMesa(''); setPerros(filasVacias()); setBebidas({}); setObservaciones('')
+    setNombre(''); setMesa(''); setPerros(filasVacias()); setBebidas({}); setEnvases(0); setObservaciones('')
   }
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault()
-    const nueva = { nombre, mesa, perros, bebidas, observaciones }
+    const nueva = { nombre, mesa, perros, bebidas, envases, observaciones }
     const error = validar(nueva)
     if (error) return setMensaje({ texto: error, ok: false })
     setEnviando(true)
@@ -127,6 +129,7 @@ export function FormularioComanda({ jornada }: { jornada: Jornada }) {
                 <div className="opt" key={b.id}>
                   <button type="button" className="big" aria-label={`Agregar ${b.nombre}`} onClick={() => cambiarBebida(b.id, 1)}>
                     <img src={b.icono} alt="" />
+                    {b.tam && <span className="tam">{b.tam}</span>}
                   </button>
                   <div className="stepper">
                     <button type="button" className="mini" aria-label={`Quitar ${b.nombre}`} hidden={!n} onClick={() => cambiarBebida(b.id, -1)}>−</button>
@@ -135,7 +138,17 @@ export function FormularioComanda({ jornada }: { jornada: Jornada }) {
                 </div>
               )
             })}
+            <div className="opt">
+              <button type="button" className="big" aria-label="Agregar envase para llevar" onClick={() => setEnvases(n => n + 1)}>
+                <IconoEnvase />
+              </button>
+              <div className="stepper">
+                <button type="button" className="mini" aria-label="Quitar envase" hidden={!envases} onClick={() => setEnvases(n => Math.max(0, n - 1))}>−</button>
+                <span className={`bqty${envases ? ' on' : ''}`}>{envases || ''}</span>
+              </div>
+            </div>
           </div>
+          <small className="nota-envase">{BEBIDAS.map(b => b.nombre).join(' · ')} · Envase para llevar</small>
         </section>
         <section className="panel">
           <label className="lbl" htmlFor="obs" style={{ fontSize: 19 }}>Observaciones:</label>

@@ -4,13 +4,13 @@ import { INGREDIENTES } from './menu'
 import type { NuevaComanda, Precios } from './tipos'
 
 const todo = INGREDIENTES.map(i => i.id)
-const base: NuevaComanda = { nombre: 'Ana', mesa: '', perros: [], bebidas: {}, observaciones: '' }
-const precios: Precios = { perro: 600, bebidas: { nestea: 300, coca: 350, agua: 200 } }
+const base: NuevaComanda = { nombre: 'Ana', mesa: '', perros: [], bebidas: {}, envases: 0, observaciones: '' }
+const precios: Precios = { perro: 600, bebidas: { nestea: 300, refresco: 350, refresco1l: 700, refresco2l: 1100, agua: 200 }, envase: 100 }
 
 describe('cálculos de la comanda', () => {
   it('suma perros y bebidas en Bs con los precios del día', () => {
-    expect(totalBs({ perros: [{ cant: 2, ingredientes: todo }, { cant: 1, ingredientes: ['salchicha'] }], bebidas: { coca: 2, agua: 1 } }, precios))
-      .toBe(3 * 600 + 2 * 350 + 200)
+    expect(totalBs({ perros: [{ cant: 2, ingredientes: todo }, { cant: 1, ingredientes: ['salchicha'] }], bebidas: { refresco: 2, refresco2l: 1, agua: 1 }, envases: 2 }, precios))
+      .toBe(3 * 600 + 2 * 350 + 1100 + 200 + 2 * 100)
   })
 
   it('convierte a dólares con la tasa y redondea a céntimos', () => {
@@ -37,9 +37,9 @@ describe('cálculos de la comanda', () => {
   })
 
   it('resume la comanda para caja', () => {
-    expect(resumen({ perros: [{ cant: 3, ingredientes: todo }], bebidas: { nestea: 1 } })).toBe('3 perros con todo, 1 Nestea')
-    expect(resumen({ perros: [{ cant: 2, ingredientes: todo }, { cant: 1, ingredientes: ['salchicha'] }], bebidas: {} }))
-      .toBe('3 perros (2 con todo)')
+    expect(resumen({ perros: [{ cant: 3, ingredientes: todo }], bebidas: { nestea: 1 }, envases: 0 })).toBe('3 perros con todo, 1 Nestea')
+    expect(resumen({ perros: [{ cant: 2, ingredientes: todo }, { cant: 1, ingredientes: ['salchicha'] }], bebidas: {}, envases: 1 }))
+      .toBe('3 perros (2 con todo), 1 envase')
   })
 
   it('valida antes de enviar a cocina', () => {
@@ -53,6 +53,8 @@ describe('cálculos de la comanda', () => {
     expect(validarJornada({ tasa: 0, precios })).toMatch(/tasa BCV/)
     expect(validarJornada({ tasa: 190, precios: { ...precios, perro: 0 } })).toMatch(/perro/)
     expect(validarJornada({ tasa: 190, precios: { ...precios, bebidas: { ...precios.bebidas, agua: 0 } } })).toMatch(/Agua/)
+    expect(validarJornada({ tasa: 190, precios: { ...precios, bebidas: { ...precios.bebidas, refresco1l: 0 } } })).toMatch(/Refresco 1 L/)
+    expect(validarJornada({ tasa: 190, precios: { ...precios, envase: 0 } })).toMatch(/envase/i)
     expect(validarJornada({ tasa: 190, precios })).toBeNull()
   })
 })

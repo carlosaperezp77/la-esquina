@@ -3,6 +3,7 @@ import { almacen } from '../data'
 import { fmtBs, fmtNumero, fmtUsd, hora, quien, resumen } from '../domain/calculos'
 import { METODOS_PAGO } from '../domain/menu'
 import type { Comanda, EstadoComanda, MetodoPago, Moneda } from '../domain/tipos'
+import { IconoCredito } from './Iconos'
 import { IconoTransferencia } from './IconoTransferencia'
 
 const ESTADO: Record<EstadoComanda, string> = {
@@ -22,7 +23,7 @@ export function TarjetaComanda({ c, children }: { c: Comanda; children?: React.R
         <span>
           {quien(c)}
           <span className={`chip${pagada ? ' paid' : c.estado === 'entregada' ? '' : ' info'}`}>
-            {pagada ? 'Pagada' : ESTADO[c.estado]}
+            {pagada ? (c.pago!.metodo === 'credito' ? 'A crédito' : 'Pagada') : ESTADO[c.estado]}
           </span>
           <br />
           <span className="d">
@@ -46,6 +47,7 @@ export function PorCobrar({ c }: { c: Comanda }) {
   const [moneda, setMoneda] = useState<Moneda | null>(null)
   const [error, setError] = useState('')
   const [guardando, setGuardando] = useState(false)
+  const [anulando, setAnulando] = useState(false)
   const pideRef = METODOS_PAGO.find(m => m.id === metodo)?.pideReferencia ?? false
 
   const confirmar = async () => {
@@ -65,7 +67,14 @@ export function PorCobrar({ c }: { c: Comanda }) {
     <TarjetaComanda c={c}>
       {!abierto ? (
         <div className="acts">
-          <button type="button" className="btn sm" onClick={() => setAbierto(true)}>Cobrar</button>
+          {anulando && <span className="msg err">¿Anular esta comanda? Sale de cocina y no cuenta como venta.</span>}
+          <button type="button" className={`btn ghost sm${anulando ? ' peligro-txt' : ''}`}
+            onClick={() => (anulando ? void almacen.anular(c.id) : setAnulando(true))}>
+            {anulando ? 'Sí, anular' : 'Anular'}
+          </button>
+          {anulando
+            ? <button type="button" className="btn sm" onClick={() => setAnulando(false)}>No</button>
+            : <button type="button" className="btn sm" onClick={() => setAbierto(true)}>Cobrar</button>}
         </div>
       ) : (
         <div className="paybox">
@@ -74,7 +83,7 @@ export function PorCobrar({ c }: { c: Comanda }) {
             {METODOS_PAGO.map(m => (
               <div className="opt" key={m.id}>
                 <button type="button" className="big" aria-label={m.nombre} onClick={() => { setMetodo(m.id); setError('') }}>
-                  {m.icono ? <img src={m.icono} alt="" /> : <IconoTransferencia />}
+                  {m.icono ? <img src={m.icono} alt="" /> : m.id === 'credito' ? <IconoCredito /> : <IconoTransferencia />}
                 </button>
                 <small>{m.nombre}</small>
                 <button type="button" className="sq" aria-pressed={metodo === m.id} aria-label={`Pagar con ${m.nombre}`}

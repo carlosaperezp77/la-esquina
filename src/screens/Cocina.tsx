@@ -25,7 +25,7 @@ function pitar(ctx: AudioContext) {
 export function Cocina({ comandas }: { comandas: Comanda[] }) {
   const [audio, setAudio] = useState<AudioContext | null>(null)
   const vistas = useRef<Set<string> | null>(null)
-  const activas = comandas.filter(c => c.estado !== 'entregada')
+  const activas = comandas.filter(c => c.estado !== 'entregada' && !c.anuladaEn)
 
   useEffect(() => {
     const nuevas = activas.filter(c => c.estado === 'nueva').map(c => c.id)
@@ -81,6 +81,7 @@ function Orden({ c, boton, onAvanzar }: { c: Comanda; boton: string; onAvanzar: 
           )
         })}
         {bebidas.map(b => <li key={b.id}><b>{c.bebidas[b.id]}×</b> {b.nombre}</li>)}
+        {c.envases > 0 && <li><b>{c.envases}×</b> envase para llevar</li>}
       </ul>
       {c.observaciones && <div className="obs">{c.observaciones}</div>}
       <div className="send">

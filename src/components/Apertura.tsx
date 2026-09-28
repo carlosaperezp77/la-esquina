@@ -1,22 +1,29 @@
 import { useState } from 'react'
 import { almacen } from '../data'
 import { aDolares, fmtBs, fmtUsd, hoy, leerNumero, validarJornada } from '../domain/calculos'
-import { BEBIDAS } from '../domain/menu'
-import type { BebidaId, Jornada, Precios } from '../domain/tipos'
+import { BEBIDAS, INSUMOS } from '../domain/menu'
+import type { BebidaId, InsumoId, Inventario, Jornada, Precios } from '../domain/tipos'
 import perro from '../assets/iconos/salchicha.png'
+import { IconoEnvase } from './Iconos'
 
 const texto = (n: number | undefined) => (n ? fmtBs(n) : '')
+const cantidad = (n: number | undefined) => (n === undefined ? '' : String(n).replace('.', ','))
 
 /**
- * Apertura del día: el cajero escribe la tasa BCV y los precios en Bs antes de
- * empezar. Se precarga con la última apertura para que solo cambie lo necesario.
+ * Apertura del día: el cajero escribe la tasa BCV, los precios en Bs y el
+ * inventario que recibe antes de empezar. Los precios se precargan con la
+ * última apertura para que solo cambie lo necesario.
  */
 export function Apertura({ anterior, alTerminar }: { anterior: Jornada | null; alTerminar?: () => void }) {
   const esHoy = anterior?.fecha === hoy()
   const [tasa, setTasa] = useState(texto(anterior?.tasa))
   const [perroBs, setPerroBs] = useState(texto(anterior?.precios.perro))
+  const [envaseBs, setEnvaseBs] = useState(texto(anterior?.precios.envase))
   const [bebidas, setBebidas] = useState<Record<BebidaId, string>>(() =>
-    Object.fromEntries(BEBIDAS.map(b => [b.id, texto(anterior?.precios.bebidas[b.id])])) as Record<BebidaId, string>)
+    Object.fromEntries(BEBIDAS.map(b => [b.id, texto(anterior?.precios.bebidas?.[b.id])])) as Record<BebidaId, string>)
+  // El inventario solo se precarga al corregir la apertura de hoy; cada día se cuenta de nuevo.
+  const [inventario, setInventario] = useState<Record<InsumoId, string>>(() =>
+    Object.fromEntries(INSUMOS.map(i => [i.id, esHoy ? cantidad(anterior?.inventario?.[i.id]) : ''])) as Record<InsumoId, string>)
   const [error, setError] = useState('')
   const [guardando, setGuardando] = useState(false)
 
@@ -24,6 +31,7 @@ export function Apertura({ anterior, alTerminar }: { anterior: Jornada | null; a
   const precios: Precios = {
     perro: leerNumero(perroBs),
     bebidas: Object.fromEntries(BEBIDAS.map(b => [b.id, leerNumero(bebidas[b.id])])) as Record<BebidaId, number>,
+    envase: leerNumero(envaseBs),
   }
   const enDolares = (bs: number) => (t && bs ? `≈ $${fmtUsd(aDolares(bs, t))}` : '$ —')
 
@@ -31,9 +39,12 @@ export function Apertura({ anterior, alTerminar }: { anterior: Jornada | null; a
     e.preventDefault()
     const err = validarJornada({ tasa: t, precios })
     if (err) return setError(err)
+    const falta = INSUMOS.find(i => inventario[i.id].trim() === '')
+    if (falta) return setError(`Escribe cuánto recibiste de ${falta.nombre} (pon 0 si no hay).`)
+    const inv: Inventario = Object.fromEntries(INSUMOS.map(i => [i.id, leerNumero(inventario[i.id])]))
     setGuardando(true)
     try {
-      await almacen.abrirJornada({ fecha: hoy(), tasa: t, precios })
+      await almacen.abrirJornada({ fecha: hoy(), tasa: t, precios, inventario: inv })
       alTerminar?.()
     } catch (e) {
       setError(`No se pudo guardar: ${e instanceof Error ? e.message : String(e)}`)
@@ -41,9 +52,9 @@ export function Apertura({ anterior, alTerminar }: { anterior: Jornada | null; a
     }
   }
 
-  const fila = (id: string, nombre: string, icono: string, valor: string, cambiar: (v: string) => void) => (
+  const fila = (id: string, nombre: string, icono: React.ReactNode, valor: string, cambiar: (v: string) => void) => (
     <div className="precio" key={id}>
-      <div className="ic"><img src={icono} alt="" /></div>
+      <div className="ic">{icono}</div>
       <label htmlFor={`precio-${id}`}>{nombre}</label>
       <div className="entrada">
         <span>Bs</span>
@@ -57,8 +68,8 @@ export function Apertura({ anterior, alTerminar }: { anterior: Jornada | null; a
   return (
     <form className="wrap apertura" onSubmit={guardar} noValidate>
       <h1 className="titulo" style={{ fontSize: 28 }}>
-        {esHoy ? 'Cambiar tasa o precios de hoy' : 'Apertura del día'}
-        <small>{esHoy ? 'Las comandas ya enviadas conservan su precio.' : 'Antes de tomar pedidos, confirma la tasa y los precios.'}</small>
+        {esHoy ? 'Cambiar la apertura de hoy' : 'Apertura del día'}
+        <small>{esHoy ? 'Las comandas ya enviadas conservan su precio.' : 'Antes de tomar pedidos, confirma la tasa, los precios y el inventario que recibes.'}</small>
       </h1>
 
       <section className="panel tasa">
@@ -72,10 +83,25 @@ export function Apertura({ anterior, alTerminar }: { anterior: Jornada | null; a
       </section>
 
       <section className="panel">
-        <span className="lbl">Precios en bolívares</span>
+        <span className="lbl">Precios del día</span>
         <div className="precios">
-          {fila('perro', 'Perro caliente', perro, perroBs, setPerroBs)}
-          {BEBIDAS.map(b => fila(b.id, b.nombre, b.icono, bebidas[b.id], v => setBebidas(x => ({ ...x, [b.id]: v }))))}
+          {fila('perro', 'Perro caliente', <img src={perro} alt="" />, perroBs, setPerroBs)}
+          {BEBIDAS.map(b => fila(b.id, b.nombre, <><img src={b.icono} alt="" />{b.tam && <span className="tam">{b.tam}</span>}</>, bebidas[b.id], v => setBebidas(x => ({ ...x, [b.id]: v }))))}
+          {fila('envase', 'Envase para llevar', <IconoEnvase />, envaseBs, setEnvaseBs)}
+        </div>
+      </section>
+
+      <section className="panel">
+        <span className="lbl">Inventario entregado para el día</span>
+        <p className="nota">Lo que recibes al empezar el turno. Al cerrar la caja declaras lo que queda.</p>
+        <div className="inventario">
+          {INSUMOS.map(i => (
+            <label className="insumo" key={i.id} htmlFor={`inv-${i.id}`}>
+              <span>{i.nombre}</span>
+              <input className="box" id={`inv-${i.id}`} inputMode="decimal" placeholder="0" value={inventario[i.id]}
+                onChange={e => { setInventario(x => ({ ...x, [i.id]: e.target.value })); setError('') }} />
+            </label>
+          ))}
         </div>
       </section>
 

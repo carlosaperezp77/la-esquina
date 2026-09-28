@@ -60,7 +60,7 @@ export class AlmacenLocal implements Almacen {
 
   async listar() {
     const f = hoy()
-    return this.leer().filter(c => c.fecha === f || !c.pago)
+    return this.leer().filter(c => c.fecha === f || (!c.pago && !c.anuladaEn))
   }
 
   suscribir(cb: () => void) {
@@ -80,6 +80,7 @@ export class AlmacenLocal implements Almacen {
       mesa: n.mesa,
       perros: n.perros.filter(l => l.cant > 0),
       bebidas: Object.fromEntries(Object.entries(n.bebidas).filter(([, v]) => v)),
+      envases: n.envases,
       observaciones: n.observaciones.trim(),
       tasa: jornada.tasa,
       totalBs: totalBs(n, jornada.precios),
@@ -89,6 +90,7 @@ export class AlmacenLocal implements Almacen {
       listaEn: null,
       entregadaEn: null,
       pago: null,
+      anuladaEn: null,
     }
     this.guardar([...cs, c])
     return c
@@ -102,6 +104,11 @@ export class AlmacenLocal implements Almacen {
       listaEn: estado === 'lista' ? ahora : c.listaEn,
       entregadaEn: estado === 'entregada' ? ahora : c.entregadaEn,
     }))
+  }
+
+  async anular(id: string) {
+    const anuladaEn = new Date().toISOString()
+    this.guardar(this.leer().map(c => (c.id === id && !c.pago ? { ...c, anuladaEn } : c)))
   }
 
   async cobrar(id: string, metodo: MetodoPago, referencia: string | null, moneda: Moneda | null) {

@@ -10,7 +10,7 @@ export function Mesero({ comandas, ultimaJornada, cierreHoy }: Props) {
   const jornada = ultimaJornada?.fecha === hoy() ? ultimaJornada : null
   const [vista, setVista] = useState<'servir' | 'nueva'>('servir')
   const [aviso, setAviso] = useState<string | null>(null)
-  const listas = comandas.filter(c => c.estado === 'lista')
+  const listas = comandas.filter(c => c.estado === 'lista' && !c.anuladaEn)
   const conocidas = useRef<Set<string> | null>(null)
 
   // Aviso cuando cocina marca una comanda como lista.

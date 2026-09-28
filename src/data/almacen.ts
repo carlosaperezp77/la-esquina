@@ -15,6 +15,8 @@ export interface Almacen {
   /** Crea la comanda con la tasa y los precios de la jornada. */
   crear(c: NuevaComanda, jornada: Jornada): Promise<Comanda>
   cambiarEstado(id: string, estado: EstadoComanda): Promise<void>
+  /** Anula una comanda sin cobrar: sale de cocina y no cuenta como venta. */
+  anular(id: string): Promise<void>
   /** `moneda` solo aplica al efectivo. */
   cobrar(id: string, metodo: MetodoPago, referencia: string | null, moneda: Moneda | null): Promise<void>
   /** Cierre de caja de esa fecha, o null si el día sigue abierto. */

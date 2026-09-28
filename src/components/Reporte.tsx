@@ -1,78 +1,42 @@
 import { useState } from 'react'
 import { almacen } from '../data'
 import { fmtBs, fmtNumero, fmtUsd, hora, leerNumero, redondear } from '../domain/calculos'
-import { BEBIDAS, METODOS_PAGO } from '../domain/menu'
+import { INSUMOS, METODOS_PAGO } from '../domain/menu'
 import { efectivoEsperado, resumenDia } from '../domain/reporte'
-import type { Cierre, Comanda, Jornada, ResumenDia, VentaPorMetodo } from '../domain/tipos'
+import type { Cierre, Comanda, InsumoId, Inventario, Jornada, ResumenDia } from '../domain/tipos'
+import { ControlDiario } from './ControlDiario'
 
 const fechaLarga = (f: string) =>
   new Date(`${f}T12:00:00`).toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
-const nombreMetodo = (v: VentaPorMetodo) =>
-  METODOS_PAGO.find(m => m.id === v.metodo)!.nombre + (v.metodo === 'efectivo' ? (v.moneda === 'usd' ? ' en $' : ' en Bs') : '')
-
-const monto = (v: VentaPorMetodo) => (v.moneda === 'usd' ? `$${fmtUsd(v.monto)}` : `Bs ${fmtBs(v.monto)}`)
-
-/** Reporte de ventas del día y cierre de caja. */
+/** Reporte del día con el formato "Control diario de caja" y el cierre de caja. */
 export function Reporte({ comandas, jornada, cierre }: { comandas: Comanda[]; jornada: Jornada; cierre: Cierre | null }) {
   const r = cierre?.resumen ?? resumenDia(comandas, jornada.fecha)
   const referencias = comandas
-    .filter(c => c.fecha === jornada.fecha && c.pago?.referencia)
+    .filter(c => c.fecha === jornada.fecha && c.pago?.referencia && !c.anuladaEn)
     .sort((a, b) => a.numero - b.numero)
 
   return (
     <div className="wrap reporte">
-      <div className="rep-cab">
+      <div className="rep-cab no-print">
         <h1 className="titulo" style={{ fontSize: 28 }}>
-          Ventas del día
+          Control diario de caja
           <small>{fechaLarga(jornada.fecha)} · Tasa BCV Bs {fmtBs(jornada.tasa)}</small>
         </h1>
-        <button type="button" className="btn ghost sm no-print" onClick={() => window.print()}>Imprimir</button>
-      </div>
-
-      <div className="cifras">
-        <div><span>Total vendido</span><b>Bs {fmtBs(r.totalBs)}</b><small>${fmtUsd(r.totalUsd)}</small></div>
-        <div><span>Comandas cobradas</span><b>{r.comandasCobradas}</b><small>{r.perros} perro{r.perros === 1 ? '' : 's'}</small></div>
+        <button type="button" className="btn ghost sm" onClick={() => window.print()}>Imprimir</button>
       </div>
 
       {!cierre && r.pendientes > 0 && (
-        <p className="alerta">
-          Hay {r.pendientes} comanda{r.pendientes > 1 ? 's' : ''} sin cobrar por Bs {fmtBs(r.pendientesBs)}. No entran en el reporte hasta que se cobren.
+        <p className="alerta no-print">
+          Hay {r.pendientes} comanda{r.pendientes > 1 ? 's' : ''} sin cobrar por Bs {fmtBs(r.pendientesBs)}. Cóbralas antes de cerrar la caja.
         </p>
       )}
 
-      <section className="panel">
-        <span className="lbl">Por forma de pago</span>
-        {r.porMetodo.length === 0 ? <p className="vacio">Todavía no hay ventas cobradas hoy.</p> : (
-          <div className="tabla"><table>
-            <thead><tr><th>Forma de pago</th><th>Comandas</th><th>Monto</th><th>Equivale</th></tr></thead>
-            <tbody>
-              {r.porMetodo.map(v => (
-                <tr key={`${v.metodo}${v.moneda}`}>
-                  <td>{nombreMetodo(v)}</td>
-                  <td>{v.cant}</td>
-                  <td><b>{monto(v)}</b></td>
-                  <td>{v.moneda === 'usd' ? `Bs ${fmtBs(v.bs)}` : `$${fmtUsd(v.usd)}`}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot><tr><td>Total</td><td>{r.comandasCobradas}</td><td><b>Bs {fmtBs(r.totalBs)}</b></td><td>${fmtUsd(r.totalUsd)}</td></tr></tfoot>
-          </table></div>
-        )}
-      </section>
-
-      <section className="panel">
-        <span className="lbl">Productos vendidos</span>
-        <div className="tabla"><table>
-          <tbody>
-            <tr><td>Perros calientes</td><td><b>{r.perros}</b></td><td className="d">{r.perrosConTodo} con todo</td></tr>
-            {BEBIDAS.map(b => <tr key={b.id}><td>{b.nombre}</td><td><b>{r.bebidas[b.id] ?? 0}</b></td><td /></tr>)}
-          </tbody>
-        </table></div>
-      </section>
+      <ControlDiario jornada={jornada} comandas={comandas} resumen={r}
+        inventarioFinal={cierre?.inventarioFinal ?? null} observaciones={cierre?.observaciones ?? ''} />
 
       {referencias.length > 0 && (
-        <section className="panel">
+        <section className="panel no-print">
           <span className="lbl">Referencias para verificar en el banco</span>
           <div className="tabla"><table>
             <thead><tr><th>Nº</th><th>Forma de pago</th><th>Referencia</th><th>Monto</th></tr></thead>
@@ -90,7 +54,7 @@ export function Reporte({ comandas, jornada, cierre }: { comandas: Comanda[]; jo
         </section>
       )}
 
-      {cierre ? <ResultadoCierre cierre={cierre} /> : <FormularioCierre r={r} fecha={jornada.fecha} />}
+      {cierre ? <ResultadoCierre cierre={cierre} /> : <FormularioCierre r={r} jornada={jornada} />}
     </div>
   )
 }
@@ -102,7 +66,9 @@ function Diferencia({ contado, esperado, moneda }: { contado: number; esperado: 
   return <span className={`dif ${d > 0 ? 'sobra' : 'falta'}`}>{d > 0 ? 'Sobra' : 'Falta'} {f(d)}</span>
 }
 
-function FormularioCierre({ r, fecha }: { r: ResumenDia; fecha: string }) {
+function FormularioCierre({ r, jornada }: { r: ResumenDia; jornada: Jornada }) {
+  const [inventario, setInventario] = useState<Record<InsumoId, string>>(() =>
+    Object.fromEntries(INSUMOS.map(i => [i.id, ''])) as Record<InsumoId, string>)
   const [fondoBs, setFondoBs] = useState('')
   const [fondoUsd, setFondoUsd] = useState('')
   const [contadoBs, setContadoBs] = useState('')
@@ -120,16 +86,19 @@ function FormularioCierre({ r, fecha }: { r: ResumenDia; fecha: string }) {
     e.preventDefault()
     if (r.pendientes > 0) return setError('Cobra o revisa las comandas pendientes antes de cerrar.')
     if (!listo) return setError('Escribe el efectivo contado en Bs y en $ (pon 0 si no hay).')
+    const falta = INSUMOS.find(i => inventario[i.id].trim() === '')
+    if (falta) return setError(`Escribe cuánto queda de ${falta.nombre.toLowerCase()} (pon 0 si no queda).`)
     if (!confirmar) return setConfirmar(true)
     setGuardando(true)
     try {
       await almacen.cerrarDia({
-        fecha,
+        fecha: jornada.fecha,
         fondoBs: leerNumero(fondoBs),
         fondoUsd: leerNumero(fondoUsd),
         contadoBs: contado.bs,
         contadoUsd: contado.usd,
         observaciones: observaciones.trim(),
+        inventarioFinal: Object.fromEntries(INSUMOS.map(i => [i.id, leerNumero(inventario[i.id])])) as Inventario,
         resumen: r,
       })
     } catch (err) {
@@ -171,7 +140,18 @@ function FormularioCierre({ r, fecha }: { r: ResumenDia; fecha: string }) {
           {contadoUsd.trim() !== '' && <Diferencia contado={contado.usd} esperado={esperado.usd} moneda="usd" />}
         </div>
       </div>
-      <label className="lbl" htmlFor="obs-cierre" style={{ fontSize: 17 }}>Observaciones</label>
+      <span className="lbl" style={{ fontSize: 17 }}>Inventario final</span>
+      <p className="nota">Cuenta lo que queda de cada insumo al terminar el turno.</p>
+      <div className="inventario">
+        {INSUMOS.map(i => (
+          <label className="insumo" key={i.id} htmlFor={`fin-${i.id}`}>
+            <span>{i.nombre}<small className="entregado">Entregado: {jornada.inventario?.[i.id] ?? 0}</small></span>
+            <input className="box" id={`fin-${i.id}`} inputMode="decimal" placeholder="0" value={inventario[i.id]}
+              onChange={e => { setInventario(x => ({ ...x, [i.id]: e.target.value })); setError(''); setConfirmar(false) }} />
+          </label>
+        ))}
+      </div>
+      <label className="lbl" htmlFor="obs-cierre" style={{ fontSize: 17 }}>Observaciones generales</label>
       <textarea className="box" id="obs-cierre" placeholder="Ej.: faltante por vuelto mal dado" value={observaciones}
         onChange={e => setObservaciones(e.target.value)} />
       <div className="send">
@@ -189,7 +169,7 @@ function FormularioCierre({ r, fecha }: { r: ResumenDia; fecha: string }) {
 function ResultadoCierre({ cierre }: { cierre: Cierre }) {
   const esperado = efectivoEsperado(cierre.resumen, cierre.fondoBs, cierre.fondoUsd)
   return (
-    <section className="panel cierre">
+    <section className="panel cierre no-print">
       <span className="lbl">Caja cerrada a las {hora(cierre.cerradoEn)}</span>
       <div className="tabla"><table>
         <thead><tr><th>Efectivo</th><th>Fondo</th><th>Debería haber</th><th>Contado</th><th>Resultado</th></tr></thead>

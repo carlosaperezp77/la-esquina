@@ -27,7 +27,7 @@ export function Caja({ comandas, ultimaJornada, cierreHoy }: Props) {
   if (cierreHoy) {
     return (
       <div className="wrap">
-        <p className="vacio">La caja de hoy ya se cerró. Mañana empieza con una nueva apertura del día.</p>
+        <p className="vacio no-print">La caja de hoy ya se cerró. Mañana empieza con una nueva apertura del día.</p>
         <Reporte comandas={comandas} jornada={jornada} cierre={cierreHoy} />
       </div>
     )
@@ -37,8 +37,9 @@ export function Caja({ comandas, ultimaJornada, cierreHoy }: Props) {
     return <div className="wrap">{pestanas}<Reporte comandas={comandas} jornada={jornada} cierre={null} /></div>
   }
 
-  const pendientes = comandas.filter(c => !c.pago)
-  const cobradas = comandas.filter(c => c.pago && c.fecha === hoy()).reverse()
+  const vigentes = comandas.filter(c => !c.anuladaEn)
+  const pendientes = vigentes.filter(c => !c.pago)
+  const cobradas = vigentes.filter(c => c.pago && c.fecha === hoy()).reverse()
   const deudaBs = pendientes.reduce((s, c) => s + c.totalBs, 0)
   const deudaUsd = pendientes.reduce((s, c) => s + c.totalUsd, 0)
 
@@ -66,7 +67,7 @@ export function Caja({ comandas, ultimaJornada, cierreHoy }: Props) {
 
       {cobradas.length > 0 && (
         <section className="lista">
-          <h2 className="titulo">Cobradas hoy</h2>
+          <h2 className="titulo">Cobradas y a crédito hoy</h2>
           {cobradas.map(c => <TarjetaComanda key={c.id} c={c} />)}
         </section>
       )}

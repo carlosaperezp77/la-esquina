@@ -11,6 +11,7 @@ interface Fila {
   mesa: string
   perros: Comanda['perros']
   bebidas: Comanda['bebidas']
+  envases: number | null
   observaciones: string
   tasa: number
   total_bs: number | null
@@ -23,6 +24,7 @@ interface Fila {
   pago_referencia: string | null
   pago_moneda: Moneda | null
   cobrada_en: string | null
+  anulada_en: string | null
 }
 
 const aComanda = (f: Fila): Comanda => ({
@@ -33,6 +35,7 @@ const aComanda = (f: Fila): Comanda => ({
   mesa: f.mesa,
   perros: f.perros,
   bebidas: f.bebidas,
+  envases: f.envases ?? 0,
   observaciones: f.observaciones,
   tasa: Number(f.tasa),
   // Las comandas anteriores a la apertura en Bs solo guardaban el total en USD.
@@ -45,12 +48,14 @@ const aComanda = (f: Fila): Comanda => ({
   pago: f.pago_metodo && f.cobrada_en
     ? { metodo: f.pago_metodo, referencia: f.pago_referencia, moneda: f.pago_moneda, cobradaEn: f.cobrada_en }
     : null,
+  anuladaEn: f.anulada_en,
 })
 
 interface FilaJornada {
   fecha: string
   tasa: number
   precios: Precios
+  inventario: Jornada['inventario'] | null
   abierta_en: string
 }
 
@@ -58,6 +63,7 @@ const aJornada = (f: FilaJornada): Jornada => ({
   fecha: f.fecha,
   tasa: Number(f.tasa),
   precios: f.precios,
+  inventario: f.inventario ?? {},
   abiertaEn: f.abierta_en,
 })
 
@@ -69,6 +75,7 @@ interface FilaCierre {
   contado_bs: number
   contado_usd: number
   observaciones: string
+  inventario_final: Cierre['inventarioFinal'] | null
   resumen: ResumenDia
 }
 
@@ -80,6 +87,7 @@ const aCierre = (f: FilaCierre): Cierre => ({
   contadoBs: Number(f.contado_bs),
   contadoUsd: Number(f.contado_usd),
   observaciones: f.observaciones,
+  inventarioFinal: f.inventario_final ?? {},
   resumen: f.resumen,
 })
 
@@ -96,7 +104,7 @@ export class AlmacenSupabase implements Almacen {
     const { data, error } = await this.db
       .from('comandas')
       .select('*')
-      .or(`fecha.eq.${hoy()},cobrada_en.is.null`)
+      .or(`fecha.eq.${hoy()},and(cobrada_en.is.null,anulada_en.is.null)`)
       .order('creada_en')
     if (error) throw error
     return (data as Fila[]).map(aComanda)
@@ -116,7 +124,7 @@ export class AlmacenSupabase implements Almacen {
   async abrirJornada(j: Omit<Jornada, 'abiertaEn'>) {
     const { data, error } = await this.db
       .from('jornadas')
-      .upsert({ fecha: j.fecha, tasa: j.tasa, precios: j.precios, abierta_en: new Date().toISOString() })
+      .upsert({ fecha: j.fecha, tasa: j.tasa, precios: j.precios, inventario: j.inventario, abierta_en: new Date().toISOString() })
       .select()
       .single()
     if (error) throw error
@@ -144,6 +152,7 @@ export class AlmacenSupabase implements Almacen {
         mesa: n.mesa,
         perros: n.perros.filter(l => l.cant > 0),
         bebidas: Object.fromEntries(Object.entries(n.bebidas).filter(([, v]) => v)),
+        envases: n.envases,
         observaciones: n.observaciones.trim(),
         tasa: jornada.tasa,
         total_bs: bs,
@@ -161,6 +170,15 @@ export class AlmacenSupabase implements Almacen {
     if (estado === 'lista') cambios.lista_en = ahora
     if (estado === 'entregada') cambios.entregada_en = ahora
     const { error } = await this.db.from('comandas').update(cambios).eq('id', id)
+    if (error) throw error
+  }
+
+  async anular(id: string) {
+    const { error } = await this.db
+      .from('comandas')
+      .update({ anulada_en: new Date().toISOString() })
+      .eq('id', id)
+      .is('cobrada_en', null)
     if (error) throw error
   }
 
@@ -188,6 +206,7 @@ export class AlmacenSupabase implements Almacen {
         contado_bs: c.contadoBs,
         contado_usd: c.contadoUsd,
         observaciones: c.observaciones,
+        inventario_final: c.inventarioFinal,
         resumen: c.resumen,
       })
       .select()

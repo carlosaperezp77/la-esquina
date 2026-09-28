@@ -2,9 +2,17 @@ export type IngredienteId =
   | 'salchicha' | 'repollo' | 'papas' | 'pepinillo' | 'cebolla'
   | 'salsa' | 'mayonesa' | 'mostaza' | 'queso'
 
-export type BebidaId = 'nestea' | 'coca' | 'agua'
+export type BebidaId = 'nestea' | 'refresco' | 'refresco1l' | 'refresco2l' | 'agua'
 
-export type MetodoPago = 'efectivo' | 'movil' | 'tarjeta' | 'transferencia'
+/** Crédito: se sirvió y se anota como deuda; no entra como cobrado. */
+export type MetodoPago = 'efectivo' | 'movil' | 'tarjeta' | 'transferencia' | 'credito'
+
+/** Insumos del "Inventario entregado para el día" del Control diario de caja. */
+export type InsumoId =
+  | 'panes' | 'salchichas' | 'papas' | 'queso' | 'repollo' | 'cebolla'
+  | 'pepinillo' | 'salsa' | 'mayonesa' | 'mostaza' | 'nestea' | 'refrescos' | 'refrescos1l' | 'refrescos2l' | 'agua'
+
+export type Inventario = Partial<Record<InsumoId, number>>
 
 /** Flujo en cocina: nueva → preparando → lista → entregada. */
 export type EstadoComanda = 'nueva' | 'preparando' | 'lista' | 'entregada'
@@ -36,6 +44,8 @@ export interface Comanda {
   mesa: string
   perros: LineaPerro[]
   bebidas: Partial<Record<BebidaId, number>>
+  /** Envases para llevar. */
+  envases: number
   observaciones: string
   /** Bs por USD usada al crear la comanda. */
   tasa: number
@@ -47,6 +57,8 @@ export interface Comanda {
   listaEn: string | null
   entregadaEn: string | null
   pago: Pago | null
+  /** Si se anuló, cuándo. Una comanda anulada no cuenta como venta. */
+  anuladaEn: string | null
 }
 
 export interface NuevaComanda {
@@ -54,6 +66,7 @@ export interface NuevaComanda {
   mesa: string
   perros: LineaPerro[]
   bebidas: Partial<Record<BebidaId, number>>
+  envases: number
   observaciones: string
 }
 
@@ -61,6 +74,7 @@ export interface NuevaComanda {
 export interface Precios {
   perro: number
   bebidas: Record<BebidaId, number>
+  envase: number
 }
 
 /** Apertura del día: tasa BCV y precios en Bs. Una por fecha. */
@@ -69,6 +83,8 @@ export interface Jornada {
   /** Bs por USD, tasa BCV del día. */
   tasa: number
   precios: Precios
+  /** Inventario entregado al cajero al empezar el día. */
+  inventario: Inventario
   abiertaEn: string
 }
 
@@ -83,6 +99,8 @@ export interface Cierre {
   contadoBs: number
   contadoUsd: number
   observaciones: string
+  /** Inventario que queda al cerrar. */
+  inventarioFinal: Inventario
   /** Foto del reporte al momento del cierre, para consultarlo después. */
   resumen: ResumenDia
 }
@@ -106,6 +124,8 @@ export interface ResumenDia {
   perros: number
   perrosConTodo: number
   bebidas: Partial<Record<BebidaId, number>>
+  envases: number
+  anuladas: number
   pendientes: number
   pendientesBs: number
 }

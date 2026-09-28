@@ -171,7 +171,7 @@ textarea.box { width: 100%; min-height: 78px; resize: vertical; font-size: 17px;
 .apertura .tasa { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
 .apertura .tasa .por { font-weight: 600; }
 .precios { display: flex; flex-direction: column; gap: 10px; }
-.precio { display: grid; grid-template-columns: 54px 1fr auto; grid-template-areas: "ic nombre entrada" "ic usd entrada"; gap: 2px 14px; align-items: center; background: var(--col); border-radius: 10px; padding: 8px 12px; }
+.precio { display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; grid-template-areas: "ic nombre entrada" "ic usd entrada"; gap: 2px 14px; align-items: center; background: var(--col); border-radius: 10px; padding: 8px 12px; }
 .precio .ic { grid-area: ic; margin: 0; }
 .precio label { grid-area: nombre; font-size: 21px; font-weight: 700; }
 .precio .entrada { grid-area: entrada; }
@@ -223,3 +223,26 @@ textarea.box { width: 100%; min-height: 78px; resize: vertical; font-size: 17px;
   .cifras b, .tabla tfoot td, .col-arqueo h3 { color: #000; }
 }
 .reporte { width: 100%; }
+.inventario { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px 14px; }
+.insumo { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--col); border-radius: 8px; padding: 6px 10px; font-size: 18px; font-weight: 600; }
+.insumo .box { width: 90px; text-align: right; }
+.ic svg { width: 44px; height: 44px; }
+.big svg { width: 50px; height: 50px; }
+.nota-envase { color: var(--soft); font-size: 14px; }
+.btn.peligro-txt { color: var(--err); border-color: var(--err); }
+.insumo small.entregado { display: block; font-size: 13px; font-weight: 500; color: var(--soft); }
+.reporte .cd-hoja { margin: 4px 0 8px; }
+@media print {
+  .wrap.reporte { padding: 0; }
+}
+.big, .precio .ic { position: relative; }
+.big .tam, .precio .tam { position: absolute; right: 2px; bottom: 2px; background: var(--mustard, #e6b456); color: #181816; font-weight: 700; font-size: 13px; line-height: 1; padding: 2px 4px; border-radius: 4px; }
+@media (max-width: 420px) {
+  .precio { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 2px 8px; padding: 8px; }
+  .precio label { font-size: 18px; }
+  .precio .entrada .box { width: 96px; }
+}
+@media (max-width: 420px) { .panel > .lbl { white-space: normal; } }
+@media print {
+  main, .wrap { padding: 0 !important; margin: 0 !important; }
+}
