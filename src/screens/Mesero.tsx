@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { FormularioComanda } from '../components/FormularioComanda'
 import { almacen } from '../data'
 import { fmtNumero, hora, hoy, quien, resumen } from '../domain/calculos'
-import type { Comanda, Jornada } from '../domain/tipos'
+import type { Cierre, Comanda, Jornada } from '../domain/tipos'
 
-export function Mesero({ comandas, ultimaJornada }: { comandas: Comanda[]; ultimaJornada: Jornada | null }) {
+interface Props { comandas: Comanda[]; ultimaJornada: Jornada | null; cierreHoy: Cierre | null }
+
+export function Mesero({ comandas, ultimaJornada, cierreHoy }: Props) {
   const jornada = ultimaJornada?.fecha === hoy() ? ultimaJornada : null
   const [vista, setVista] = useState<'servir' | 'nueva'>('servir')
   const [aviso, setAviso] = useState<string | null>(null)
@@ -33,7 +35,8 @@ export function Mesero({ comandas, ultimaJornada }: { comandas: Comanda[]; ultim
       </div>
 
       {vista === 'nueva' ? (
-        jornada ? <FormularioComanda jornada={jornada} />
+        cierreHoy ? <p className="vacio">La caja de hoy ya se cerró. No se pueden tomar más pedidos.</p>
+          : jornada ? <FormularioComanda jornada={jornada} />
           : <p className="vacio">La caja todavía no abrió el día. Cuando el cajero ponga la tasa y los precios, podrás tomar pedidos.</p>
       ) : (
         <section className="lista">

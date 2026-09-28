@@ -1,4 +1,4 @@
-import type { Comanda, EstadoComanda, Jornada, MetodoPago, NuevaComanda } from '../domain/tipos'
+import type { Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda } from '../domain/tipos'
 
 /** Operaciones que comparten caja, cocina y meseros. */
 export interface Almacen {
@@ -15,5 +15,10 @@ export interface Almacen {
   /** Crea la comanda con la tasa y los precios de la jornada. */
   crear(c: NuevaComanda, jornada: Jornada): Promise<Comanda>
   cambiarEstado(id: string, estado: EstadoComanda): Promise<void>
-  cobrar(id: string, metodo: MetodoPago, referencia: string | null): Promise<void>
+  /** `moneda` solo aplica al efectivo. */
+  cobrar(id: string, metodo: MetodoPago, referencia: string | null, moneda: Moneda | null): Promise<void>
+  /** Cierre de caja de esa fecha, o null si el día sigue abierto. */
+  cierre(fecha: string): Promise<Cierre | null>
+  /** Guarda el cierre del día. Falla si ese día ya se cerró. */
+  cerrarDia(c: Omit<Cierre, 'cerradoEn'>): Promise<Cierre>
 }

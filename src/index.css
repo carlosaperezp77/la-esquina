@@ -182,3 +182,44 @@ textarea.box { width: 100%; min-height: 78px; resize: vertical; font-size: 17px;
 @media (max-width: 480px) {
   .apertura .entrada .box { width: 110px; }
 }
+.monedas { display: flex; gap: 10px; flex-wrap: wrap; }
+.monedas button { flex: 1 1 140px; background: var(--col); color: var(--ink); border: 1.5px solid #55534d; border-radius: 10px; font: 600 18px var(--f); padding: 10px 12px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
+.monedas button b { font-variant-numeric: tabular-nums; }
+.monedas button[aria-pressed="true"] { background: var(--mustard); color: var(--mustard-ink); border-color: var(--mustard); }
+
+/* Reporte y cierre */
+.rep-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.cifras > div { background: var(--panel); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.cifras span { color: var(--soft); font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.cifras b { font-size: 34px; color: var(--mustard); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.cifras small { font-size: 18px; font-variant-numeric: tabular-nums; }
+.alerta { margin: 0; background: #4a2a22; color: #ffc4b0; border-radius: 10px; padding: 10px 14px; font-size: 17px; font-weight: 600; }
+.tabla { overflow-x: auto; }
+.tabla table { width: 100%; border-collapse: collapse; font-size: 18px; font-variant-numeric: tabular-nums; }
+.tabla th { text-align: left; color: var(--soft); font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; padding: 6px 8px; border-bottom: 1px solid #45443f; }
+.tabla td { padding: 8px; border-bottom: 1px solid #383733; white-space: nowrap; }
+.tabla td.d { color: var(--soft); }
+.tabla tfoot td { border-bottom: 0; font-weight: 700; color: var(--mustard); }
+.nota { margin: 0; color: var(--soft); font-size: 16px; }
+.arqueo { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.col-arqueo { background: var(--col); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.col-arqueo h3 { margin: 0; font-size: 20px; text-transform: uppercase; color: var(--mustard); }
+.campo { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 18px; font-weight: 600; }
+.campo .entrada { display: flex; align-items: center; gap: 6px; }
+.campo .entrada i { font-style: normal; color: var(--soft); font-weight: 700; }
+.campo .box { width: 120px; text-align: right; }
+.linea { display: flex; justify-content: space-between; gap: 10px; font-size: 17px; color: var(--soft); font-variant-numeric: tabular-nums; }
+.linea b { color: var(--ink); }
+.dif { align-self: flex-end; font-weight: 700; font-size: 17px; padding: 3px 10px; border-radius: 999px; }
+.dif.ok { background: #23402d; color: var(--ok); }
+.dif.sobra { background: #233546; color: var(--blue); }
+.dif.falta { background: #4a2a22; color: var(--err); }
+.btn.peligro { background: var(--err); box-shadow: 0 3px 0 #a0513a; }
+@media print {
+  .nav, .top, .no-print, .tabs { display: none !important; }
+  body, html { background: #fff; color: #000; }
+  .panel, .cifras > div { background: #fff; border: 1px solid #999; }
+  .cifras b, .tabla tfoot td, .col-arqueo h3 { color: #000; }
+}
+.reporte { width: 100%; }

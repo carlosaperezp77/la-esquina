@@ -1,9 +1,10 @@
 import { aDolares, hoy, totalBs } from '../domain/calculos'
-import type { Comanda, EstadoComanda, Jornada, MetodoPago, NuevaComanda } from '../domain/tipos'
+import type { Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda } from '../domain/tipos'
 import type { Almacen } from './almacen'
 
 const CLAVE = 'la-esquina:comandas'
 const CLAVE_JORNADAS = 'la-esquina:jornadas'
+const CLAVE_CIERRES = 'la-esquina:cierres'
 
 /**
  * Modo demo: guarda en este navegador y avisa a las otras pestañas del mismo
@@ -21,7 +22,7 @@ export class AlmacenLocal implements Almacen {
     this.storage = storage
     this.canal?.addEventListener('message', () => this.avisar(false))
     if (typeof window !== 'undefined')
-      window.addEventListener('storage', e => { if (e.key === CLAVE || e.key === CLAVE_JORNADAS) this.avisar(false) })
+      window.addEventListener('storage', e => { if (e.key?.startsWith('la-esquina:')) this.avisar(false) })
   }
 
   private leerDe<T>(clave: string): T[] {
@@ -103,8 +104,21 @@ export class AlmacenLocal implements Almacen {
     }))
   }
 
-  async cobrar(id: string, metodo: MetodoPago, referencia: string | null) {
+  async cobrar(id: string, metodo: MetodoPago, referencia: string | null, moneda: Moneda | null) {
     const cobradaEn = new Date().toISOString()
-    this.guardar(this.leer().map(c => c.id !== id ? c : { ...c, pago: { metodo, referencia, cobradaEn } }))
+    this.guardar(this.leer().map(c => c.id !== id ? c : { ...c, pago: { metodo, referencia, moneda, cobradaEn } }))
+  }
+
+  async cierre(fecha: string) {
+    return this.leerDe<Cierre>(CLAVE_CIERRES).find(c => c.fecha === fecha) ?? null
+  }
+
+  async cerrarDia(c: Omit<Cierre, 'cerradoEn'>) {
+    const cs = this.leerDe<Cierre>(CLAVE_CIERRES)
+    if (cs.some(x => x.fecha === c.fecha)) throw new Error('Este día ya se cerró.')
+    const nuevo: Cierre = { ...c, cerradoEn: new Date().toISOString() }
+    this.storage.setItem(CLAVE_CIERRES, JSON.stringify([...cs, nuevo]))
+    this.avisar(true)
+    return nuevo
   }
 }

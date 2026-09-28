@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { almacen } from '../data'
 import { fmtBs, fmtNumero, fmtUsd, hora, quien, resumen } from '../domain/calculos'
 import { METODOS_PAGO } from '../domain/menu'
-import type { Comanda, EstadoComanda, MetodoPago } from '../domain/tipos'
+import type { Comanda, EstadoComanda, MetodoPago, Moneda } from '../domain/tipos'
 import { IconoTransferencia } from './IconoTransferencia'
 
 const ESTADO: Record<EstadoComanda, string> = {
@@ -27,7 +27,7 @@ export function TarjetaComanda({ c, children }: { c: Comanda; children?: React.R
           <br />
           <span className="d">
             {pagada
-              ? `${metodo}${c.pago?.referencia ? ` · ref. ${c.pago.referencia}` : ''} · ${hora(c.pago!.cobradaEn)}`
+              ? `${metodo}${c.pago?.moneda ? (c.pago.moneda === 'usd' ? ' en $' : ' en Bs') : ''}${c.pago?.referencia ? ` · ref. ${c.pago.referencia}` : ''} · ${hora(c.pago!.cobradaEn)}`
               : `${resumen(c)} · ${hora(c.creadaEn)}`}
           </span>
         </span>
@@ -43,6 +43,7 @@ export function PorCobrar({ c }: { c: Comanda }) {
   const [abierto, setAbierto] = useState(false)
   const [metodo, setMetodo] = useState<MetodoPago | null>(null)
   const [referencia, setReferencia] = useState('')
+  const [moneda, setMoneda] = useState<Moneda | null>(null)
   const [error, setError] = useState('')
   const [guardando, setGuardando] = useState(false)
   const pideRef = METODOS_PAGO.find(m => m.id === metodo)?.pideReferencia ?? false
@@ -50,9 +51,10 @@ export function PorCobrar({ c }: { c: Comanda }) {
   const confirmar = async () => {
     if (!metodo) return setError('Elige la forma de pago.')
     if (pideRef && !referencia.trim()) return setError('Anota la referencia del pago.')
+    if (metodo === 'efectivo' && !moneda) return setError('Indica si pagó en bolívares o en dólares.')
     setGuardando(true)
     try {
-      await almacen.cobrar(c.id, metodo, pideRef ? referencia.trim() : null)
+      await almacen.cobrar(c.id, metodo, pideRef ? referencia.trim() : null, metodo === 'efectivo' ? moneda : null)
     } catch (e) {
       setError(`No se pudo guardar el pago: ${e instanceof Error ? e.message : String(e)}`)
       setGuardando(false)
@@ -80,6 +82,16 @@ export function PorCobrar({ c }: { c: Comanda }) {
               </div>
             ))}
           </div>
+          {metodo === 'efectivo' && (
+            <div className="monedas" role="group" aria-label="Moneda del efectivo">
+              <button type="button" aria-pressed={moneda === 'bs'} onClick={() => { setMoneda('bs'); setError('') }}>
+                En Bs <b>{fmtBs(c.totalBs)}</b>
+              </button>
+              <button type="button" aria-pressed={moneda === 'usd'} onClick={() => { setMoneda('usd'); setError('') }}>
+                En $ <b>{fmtUsd(c.totalUsd)}</b>
+              </button>
+            </div>
+          )}
           {pideRef && (
             <label className="ref">
               <span className="lbl" style={{ fontSize: 16 }}>Ref.:</span>

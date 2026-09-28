@@ -15,9 +15,14 @@ export interface LineaPerro {
   ingredientes: IngredienteId[]
 }
 
+/** Moneda en que se recibió el efectivo. Los demás métodos son siempre en Bs. */
+export type Moneda = 'bs' | 'usd'
+
 export interface Pago {
   metodo: MetodoPago
   referencia: string | null
+  /** Solo para efectivo; null en los demás métodos. */
+  moneda: Moneda | null
   cobradaEn: string
 }
 
@@ -65,4 +70,42 @@ export interface Jornada {
   tasa: number
   precios: Precios
   abiertaEn: string
+}
+
+/** Cierre de caja: lo que el cajero contó contra lo que dice el sistema. */
+export interface Cierre {
+  fecha: string
+  cerradoEn: string
+  /** Fondo con que empezó la caja, por moneda. */
+  fondoBs: number
+  fondoUsd: number
+  /** Efectivo contado al cerrar, por moneda (incluye el fondo). */
+  contadoBs: number
+  contadoUsd: number
+  observaciones: string
+  /** Foto del reporte al momento del cierre, para consultarlo después. */
+  resumen: ResumenDia
+}
+
+export interface VentaPorMetodo {
+  metodo: MetodoPago
+  moneda: Moneda
+  cant: number
+  /** Monto en la moneda en que se cobró. */
+  monto: number
+  bs: number
+  usd: number
+}
+
+export interface ResumenDia {
+  fecha: string
+  comandasCobradas: number
+  totalBs: number
+  totalUsd: number
+  porMetodo: VentaPorMetodo[]
+  perros: number
+  perrosConTodo: number
+  bebidas: Partial<Record<BebidaId, number>>
+  pendientes: number
+  pendientesBs: number
 }

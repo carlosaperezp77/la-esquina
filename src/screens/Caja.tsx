@@ -2,15 +2,39 @@ import { useState } from 'react'
 import { Apertura } from '../components/Apertura'
 import { FormularioComanda } from '../components/FormularioComanda'
 import { PorCobrar, TarjetaComanda } from '../components/Cobro'
+import { Reporte } from '../components/Reporte'
 import { fmtBs, fmtUsd, hora, hoy } from '../domain/calculos'
-import type { Comanda, Jornada } from '../domain/tipos'
+import type { Cierre, Comanda, Jornada } from '../domain/tipos'
 
-export function Caja({ comandas, ultimaJornada }: { comandas: Comanda[]; ultimaJornada: Jornada | null }) {
+interface Props { comandas: Comanda[]; ultimaJornada: Jornada | null; cierreHoy: Cierre | null }
+
+export function Caja({ comandas, ultimaJornada, cierreHoy }: Props) {
   const [editando, setEditando] = useState(false)
+  const [vista, setVista] = useState<'comandas' | 'reporte'>('comandas')
   const jornada = ultimaJornada?.fecha === hoy() ? ultimaJornada : null
 
   if (!jornada || editando) {
     return <Apertura key={ultimaJornada?.abiertaEn ?? 'nueva'} anterior={ultimaJornada} alTerminar={() => setEditando(false)} />
+  }
+
+  const pestanas = (
+    <div className="tabs no-print">
+      <button type="button" aria-pressed={vista === 'comandas'} onClick={() => setVista('comandas')}>Comandas</button>
+      <button type="button" aria-pressed={vista === 'reporte'} onClick={() => setVista('reporte')}>Reporte y cierre</button>
+    </div>
+  )
+
+  if (cierreHoy) {
+    return (
+      <div className="wrap">
+        <p className="vacio">La caja de hoy ya se cerró. Mañana empieza con una nueva apertura del día.</p>
+        <Reporte comandas={comandas} jornada={jornada} cierre={cierreHoy} />
+      </div>
+    )
+  }
+
+  if (vista === 'reporte') {
+    return <div className="wrap">{pestanas}<Reporte comandas={comandas} jornada={jornada} cierre={null} /></div>
   }
 
   const pendientes = comandas.filter(c => !c.pago)
@@ -20,6 +44,7 @@ export function Caja({ comandas, ultimaJornada }: { comandas: Comanda[]; ultimaJ
 
   return (
     <div className="wrap">
+      {pestanas}
       <div className="tasa-dia">
         <span>Tasa BCV de hoy: <b>Bs {fmtBs(jornada.tasa)}</b> por $1 · abierta a las {hora(jornada.abiertaEn)}</span>
         <button type="button" onClick={() => setEditando(true)}>Cambiar tasa o precios</button>

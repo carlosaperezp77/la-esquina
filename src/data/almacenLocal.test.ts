@@ -34,7 +34,7 @@ describe('almacén en modo demo', () => {
     a.suscribir(() => avisos++)
     const c = await a.crear(nueva, jornada)
     await a.cambiarEstado(c.id, 'lista')
-    await a.cobrar(c.id, 'movil', '4521')
+    await a.cobrar(c.id, 'movil', '4521', null)
     const [g] = await a.listar()
     expect(g.estado).toBe('lista')
     expect(g.listaEn).not.toBeNull()

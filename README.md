@@ -11,6 +11,8 @@ Es una web app instalable (PWA): se abre desde el navegador en teléfonos y lapt
 
 Antes de tomar pedidos, el cajero hace la **apertura del día**: escribe la tasa BCV y los precios en bolívares, y la app muestra el equivalente en dólares. Cada comanda guarda la tasa y el total con que se creó.
 
+Al final del día, en **Reporte y cierre** el cajero ve las ventas por forma de pago (el efectivo separado en Bs y $), los productos vendidos y las referencias de pago móvil y transferencia, y hace el arqueo de efectivo para cerrar la caja.
+
 ## Probarla en tu equipo
 
 ```bash

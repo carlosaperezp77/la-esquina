@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { aDolares, hoy, redondear, totalBs } from '../domain/calculos'
-import type { Comanda, EstadoComanda, Jornada, MetodoPago, NuevaComanda, Precios } from '../domain/tipos'
+import type { Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda, Precios, ResumenDia } from '../domain/tipos'
 import type { Almacen } from './almacen'
 
 interface Fila {
@@ -21,6 +21,7 @@ interface Fila {
   entregada_en: string | null
   pago_metodo: MetodoPago | null
   pago_referencia: string | null
+  pago_moneda: Moneda | null
   cobrada_en: string | null
 }
 
@@ -42,7 +43,7 @@ const aComanda = (f: Fila): Comanda => ({
   listaEn: f.lista_en,
   entregadaEn: f.entregada_en,
   pago: f.pago_metodo && f.cobrada_en
-    ? { metodo: f.pago_metodo, referencia: f.pago_referencia, cobradaEn: f.cobrada_en }
+    ? { metodo: f.pago_metodo, referencia: f.pago_referencia, moneda: f.pago_moneda, cobradaEn: f.cobrada_en }
     : null,
 })
 
@@ -58,6 +59,28 @@ const aJornada = (f: FilaJornada): Jornada => ({
   tasa: Number(f.tasa),
   precios: f.precios,
   abiertaEn: f.abierta_en,
+})
+
+interface FilaCierre {
+  fecha: string
+  cerrado_en: string
+  fondo_bs: number
+  fondo_usd: number
+  contado_bs: number
+  contado_usd: number
+  observaciones: string
+  resumen: ResumenDia
+}
+
+const aCierre = (f: FilaCierre): Cierre => ({
+  fecha: f.fecha,
+  cerradoEn: f.cerrado_en,
+  fondoBs: Number(f.fondo_bs),
+  fondoUsd: Number(f.fondo_usd),
+  contadoBs: Number(f.contado_bs),
+  contadoUsd: Number(f.contado_usd),
+  observaciones: f.observaciones,
+  resumen: f.resumen,
 })
 
 /** Modo en línea: todos los equipos comparten la base de datos y se avisan por Realtime. */
@@ -105,6 +128,7 @@ export class AlmacenSupabase implements Almacen {
       .channel('la-esquina')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas' }, () => cb())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'jornadas' }, () => cb())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cierres' }, () => cb())
       .subscribe()
     return () => { void this.db.removeChannel(canal) }
   }
@@ -140,11 +164,35 @@ export class AlmacenSupabase implements Almacen {
     if (error) throw error
   }
 
-  async cobrar(id: string, metodo: MetodoPago, referencia: string | null) {
+  async cobrar(id: string, metodo: MetodoPago, referencia: string | null, moneda: Moneda | null) {
     const { error } = await this.db
       .from('comandas')
-      .update({ pago_metodo: metodo, pago_referencia: referencia, cobrada_en: new Date().toISOString() })
+      .update({ pago_metodo: metodo, pago_referencia: referencia, pago_moneda: moneda, cobrada_en: new Date().toISOString() })
       .eq('id', id)
     if (error) throw error
+  }
+
+  async cierre(fecha: string) {
+    const { data, error } = await this.db.from('cierres').select('*').eq('fecha', fecha).maybeSingle()
+    if (error) throw error
+    return data ? aCierre(data as FilaCierre) : null
+  }
+
+  async cerrarDia(c: Omit<Cierre, 'cerradoEn'>) {
+    const { data, error } = await this.db
+      .from('cierres')
+      .insert({
+        fecha: c.fecha,
+        fondo_bs: c.fondoBs,
+        fondo_usd: c.fondoUsd,
+        contado_bs: c.contadoBs,
+        contado_usd: c.contadoUsd,
+        observaciones: c.observaciones,
+        resumen: c.resumen,
+      })
+      .select()
+      .single()
+    if (error) throw error.code === '23505' ? new Error('Este día ya se cerró.') : error
+    return aCierre(data as FilaCierre)
   }
 }
