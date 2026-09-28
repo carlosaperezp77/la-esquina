@@ -12,6 +12,7 @@ import queso from '../assets/iconos/queso.png'
 import nestea from '../assets/iconos/nestea.png'
 import refresco from '../assets/iconos/coca.png'
 import refresco1l from '../assets/iconos/refresco1l.png'
+import refresco2l from '../assets/iconos/refresco2l.png'
 import agua from '../assets/iconos/agua.png'
 import efectivo from '../assets/iconos/efectivo.png'
 import movil from '../assets/iconos/movil.png'
@@ -37,7 +38,7 @@ export const BEBIDAS: { id: BebidaId; nombre: string; icono: string; tam?: strin
   { id: 'nestea', nombre: 'Nestea', icono: nestea },
   { id: 'refresco', nombre: 'Refresco', icono: refresco },
   { id: 'refresco1l', nombre: 'Refresco 1 L', icono: refresco1l, tam: '1 L', foto: true },
-  { id: 'refresco2l', nombre: 'Refresco 2 L', icono: refresco, tam: '2 L' },
+  { id: 'refresco2l', nombre: 'Refresco 2 L', icono: refresco2l, tam: '2 L', foto: true },
   { id: 'agua', nombre: 'Agua', icono: agua },
 ]
 
