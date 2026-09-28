@@ -86,7 +86,7 @@ export function Apertura({ anterior, alTerminar }: { anterior: Jornada | null; a
         <span className="lbl">Precios del día</span>
         <div className="precios">
           {fila('perro', 'Perro caliente', <img src={perro} alt="" />, perroBs, setPerroBs)}
-          {BEBIDAS.map(b => fila(b.id, b.nombre, <><img src={b.icono} alt="" />{b.tam && <span className="tam">{b.tam}</span>}</>, bebidas[b.id], v => setBebidas(x => ({ ...x, [b.id]: v }))))}
+          {BEBIDAS.map(b => fila(b.id, b.nombre, <><img src={b.icono} alt="" className={b.foto ? 'foto' : undefined} />{b.tam && <span className="tam">{b.tam}</span>}</>, bebidas[b.id], v => setBebidas(x => ({ ...x, [b.id]: v }))))}
           {fila('envase', 'Envase para llevar', <IconoEnvase />, envaseBs, setEnvaseBs)}
         </div>
       </section>

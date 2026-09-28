@@ -128,7 +128,7 @@ export function FormularioComanda({ jornada }: { jornada: Jornada }) {
               return (
                 <div className="opt" key={b.id}>
                   <button type="button" className="big" aria-label={`Agregar ${b.nombre}`} onClick={() => cambiarBebida(b.id, 1)}>
-                    <img src={b.icono} alt="" />
+                    <img src={b.icono} alt="" className={b.foto ? 'foto' : undefined} />
                     {b.tam && <span className="tam">{b.tam}</span>}
                   </button>
                   <div className="stepper">
