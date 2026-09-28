@@ -1,9 +1,10 @@
 -- Cierre de caja y moneda del efectivo.
+-- Se puede correr más de una vez sin error.
 
 -- En efectivo se puede pagar en Bs o en USD; los demás métodos son en Bs.
-alter table public.comandas add column pago_moneda text check (pago_moneda in ('bs', 'usd'));
+alter table public.comandas add column if not exists pago_moneda text check (pago_moneda in ('bs', 'usd'));
 
-create table public.cierres (
+create table if not exists public.cierres (
   fecha date primary key,
   cerrado_en timestamptz not null default now(),
   fondo_bs numeric(14, 2) not null default 0 check (fondo_bs >= 0),
@@ -14,9 +15,14 @@ create table public.cierres (
   resumen jsonb not null   -- foto del reporte del día al cerrar
 );
 
-alter publication supabase_realtime add table public.cierres;
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'cierres') then
+    alter publication supabase_realtime add table public.cierres;
+  end if;
+end $$;
 
 -- TEMPORAL (etapa 1): abierta a la clave pública hasta tener inicio de sesión.
 alter table public.cierres enable row level security;
+drop policy if exists "etapa 1: acceso con clave pública" on public.cierres;
 create policy "etapa 1: acceso con clave pública" on public.cierres
   for all to anon, authenticated using (true) with check (true);
