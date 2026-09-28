@@ -86,7 +86,7 @@ export function ControlDiario({ jornada, comandas, resumen: r, inventarioFinal, 
     const dif = final !== undefined && queda[i.id] !== undefined ? final - queda[i.id]! : undefined
     return (
       <>
-        <td>{i.nombre}</td>
+        <td>{i.nombre}{i.unidad && <small className="unidad"> ({i.unidad})</small>}</td>
         <td className="cd-num">{num(entregado[i.id])}</td>
         <td className={`cd-num${queda[i.id] !== undefined ? ' cd-auto' : ''}`}>{num(vendido[i.id])}</td>
         <td className={`cd-num${queda[i.id] !== undefined ? ' cd-auto' : ''}`}>{num(queda[i.id])}</td>

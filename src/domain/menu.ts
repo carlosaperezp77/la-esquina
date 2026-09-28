@@ -51,13 +51,13 @@ export const METODOS_PAGO: { id: MetodoPago; nombre: string; icono: string | nul
 ]
 
 /** Orden y nombres del "Inventario entregado para el día" del formato en papel. */
-export const INSUMOS: { id: InsumoId; nombre: string }[] = [
+export const INSUMOS: { id: InsumoId; nombre: string; unidad?: string }[] = [
   { id: 'panes', nombre: 'Panes' },
   { id: 'salchichas', nombre: 'Salchichas' },
   { id: 'papas', nombre: 'Papas ralladas' },
-  { id: 'queso', nombre: 'Queso amarillo' },
-  { id: 'repollo', nombre: 'Repollo' },
-  { id: 'cebolla', nombre: 'Cebolla' },
+  { id: 'queso', nombre: 'Queso amarillo', unidad: 'kg' },
+  { id: 'repollo', nombre: 'Repollo', unidad: 'kg' },
+  { id: 'cebolla', nombre: 'Cebolla', unidad: 'kg' },
   { id: 'pepinillo', nombre: 'Pepinillo' },
   { id: 'salsa', nombre: 'Salsa de tomate' },
   { id: 'mayonesa', nombre: 'Mayonesa' },

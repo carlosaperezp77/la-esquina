@@ -7,6 +7,8 @@ import { efectivoEsperado, resumenDia } from '../domain/reporte'
 import type { Cierre, Comanda, InsumoId, Inventario, Jornada, ResumenDia } from '../domain/tipos'
 import { ControlDiario } from './ControlDiario'
 
+const fmtCant = (n: number) => n.toLocaleString('es-VE', { maximumFractionDigits: 2 })
+
 const fechaLarga = (f: string) =>
   new Date(`${f}T12:00:00`).toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -147,9 +149,9 @@ function FormularioCierre({ r, jornada, comandas }: { r: ResumenDia; jornada: Jo
       <div className="inventario">
         {INSUMOS.map(i => (
           <label className="insumo" key={i.id} htmlFor={`fin-${i.id}`}>
-            <span>{i.nombre}
+            <span><span>{i.nombre}{i.unidad && <small className="unidad"> ({i.unidad})</small>}</span>
               <small className="entregado">
-                Entregado: {jornada.inventario?.[i.id] ?? 0}
+                Entregado: {fmtCant(jornada.inventario?.[i.id] ?? 0)}{i.unidad ? ` ${i.unidad}` : ''}
                 {queda[i.id] !== undefined && <> · Debería quedar: <b>{queda[i.id]}</b></>}
               </small>
               {queda[i.id] !== undefined && inventario[i.id].trim() !== '' && <DifInsumo contado={leerNumero(inventario[i.id])} esperado={queda[i.id]!} />}

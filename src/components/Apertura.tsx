@@ -97,7 +97,7 @@ export function Apertura({ anterior, alTerminar }: { anterior: Jornada | null; a
         <div className="inventario">
           {INSUMOS.map(i => (
             <label className="insumo" key={i.id} htmlFor={`inv-${i.id}`}>
-              <span>{i.nombre}</span>
+              <span>{i.nombre}{i.unidad && <small className="unidad"> ({i.unidad})</small>}</span>
               <input className="box" id={`inv-${i.id}`} inputMode="decimal" placeholder="0" value={inventario[i.id]}
                 onChange={e => { setInventario(x => ({ ...x, [i.id]: e.target.value })); setError('') }} />
             </label>

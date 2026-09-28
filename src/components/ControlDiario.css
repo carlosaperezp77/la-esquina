@@ -142,3 +142,4 @@
 .cd-tabla { min-width: 900px; }
 .cd-tabla .cd-sub-h { width: 40px; padding: 3px 1px; }
 .cd-inventario td:first-child, .cd-inventario td:nth-child(4) { white-space: nowrap; }
+.cd-inventario .unidad { opacity: .7; }

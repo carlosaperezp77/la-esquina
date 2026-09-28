@@ -251,3 +251,4 @@ textarea.box { width: 100%; min-height: 78px; resize: vertical; font-size: 17px;
 .insumo > span { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
 .insumo small.entregado b { color: var(--ink); }
 .insumo .dif { font-size: 14px; padding: 1px 8px; align-self: flex-start; }
+.unidad { font-weight: 500; color: inherit; opacity: .75; font-size: .85em; }
