@@ -6,7 +6,7 @@ let n = 0
 const comanda = (p: Partial<Comanda>): Comanda => ({
   id: String(++n), numero: n, fecha: '2026-09-28', nombre: 'X', mesa: '', perros: [], bebidas: {}, envases: 0,
   observaciones: '', tasa: 200, totalBs: 0, totalUsd: 0, estado: 'nueva', creadaEn: '', listaEn: null,
-  entregadaEn: null, anuladaEn: null, pago: null, ...p,
+  entregadaEn: null, anuladaEn: null, pago: null, adicionales: [], ...p,
 })
 
 describe('inventario automático', () => {

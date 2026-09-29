@@ -15,6 +15,8 @@ interface Props { comandas: Comanda[]; ultimaJornada: Jornada | null; cierreHoy:
 
 export function Caja({ comandas, ultimaJornada, cierreHoy }: Props) {
   const [editando, setEditando] = useState(false)
+  const [agregando, setAgregando] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
   const [vista, setVista] = useState<'comandas' | 'reporte'>('comandas')
   const jornada = ultimaJornada?.fecha === hoy() ? ultimaJornada : null
 
@@ -47,6 +49,7 @@ export function Caja({ comandas, ultimaJornada, cierreHoy }: Props) {
   const cobradas = vigentes.filter(c => c.pago && c.fecha === hoy()).reverse()
   const deudaBs = pendientes.reduce((s, c) => s + c.totalBs, 0)
   const deudaUsd = pendientes.reduce((s, c) => s + c.totalUsd, 0)
+  const enAgregar = pendientes.find(c => c.id === agregando)
 
   return (
     <div className="wrap">
@@ -63,7 +66,9 @@ export function Caja({ comandas, ultimaJornada, cierreHoy }: Props) {
         </div>
       )}
 
-      <FormularioComanda jornada={jornada} />
+      {aviso && <p className="msg ok aviso-ok" role="status">{aviso}</p>}
+      <FormularioComanda key={enAgregar?.id ?? 'nueva'} jornada={jornada} agregarA={enAgregar}
+        alTerminar={m => { setAgregando(null); setAviso(m ?? null) }} />
 
       <section className="lista">
         <h2 className="titulo">
@@ -74,7 +79,11 @@ export function Caja({ comandas, ultimaJornada, cierreHoy }: Props) {
               : 'Nada pendiente'}
           </small>
         </h2>
-        {pendientes.map(c => <PorCobrar key={c.id} c={c} />)}
+        {pendientes.map(c => (
+          <PorCobrar key={c.id} c={c} onAgregar={c.fecha === jornada.fecha
+            ? () => { setAgregando(c.id); setAviso(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }
+            : undefined} />
+        ))}
       </section>
 
       {cobradas.length > 0 && (

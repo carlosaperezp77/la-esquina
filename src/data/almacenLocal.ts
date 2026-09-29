@@ -1,5 +1,5 @@
-import { aDolares, hoy, totalBs } from '../domain/calculos'
-import type { Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda } from '../domain/tipos'
+import { aDolares, hoy, sumarAdicional, totalBs } from '../domain/calculos'
+import type { Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda, Pedido } from '../domain/tipos'
 import type { Almacen } from './almacen'
 
 const CLAVE = 'la-esquina:comandas'
@@ -60,7 +60,9 @@ export class AlmacenLocal implements Almacen {
 
   async listar() {
     const f = hoy()
-    return this.leer().filter(c => c.fecha === f || (!c.pago && !c.anuladaEn))
+    return this.leer()
+      .filter(c => c.fecha === f || (!c.pago && !c.anuladaEn))
+      .map(c => ({ ...c, adicionales: c.adicionales ?? [] }))
   }
 
   suscribir(cb: () => void) {
@@ -91,6 +93,7 @@ export class AlmacenLocal implements Almacen {
       entregadaEn: null,
       pago: null,
       anuladaEn: null,
+      adicionales: [],
     }
     this.guardar([...cs, c])
     return c
@@ -104,6 +107,15 @@ export class AlmacenLocal implements Almacen {
       listaEn: estado === 'lista' ? ahora : c.listaEn,
       entregadaEn: estado === 'entregada' ? ahora : c.entregadaEn,
     }))
+  }
+
+  async agregar(id: string, extra: Pedido, jornada: Jornada) {
+    const cs = this.leer()
+    const c = cs.find(x => x.id === id)
+    if (!c || c.pago || c.anuladaEn) throw new Error('Esa comanda ya se cobró o se anuló.')
+    const nueva = sumarAdicional(c, extra, jornada.precios)
+    this.guardar(cs.map(x => (x.id === id ? nueva : x)))
+    return nueva
   }
 
   async anular(id: string) {

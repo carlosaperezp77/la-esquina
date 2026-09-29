@@ -1,15 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
+import { BotonActivarAvisos } from '../components/Avisos'
 import { FormularioComanda } from '../components/FormularioComanda'
+import { useAvisosNuevas } from '../components/useAvisos'
 import { almacen } from '../data'
-import { fmtNumero, hora, hoy, quien, resumen } from '../domain/calculos'
+import { fmtBs, fmtNumero, hora, hoy, quien, resumen, ultimoAdicional } from '../domain/calculos'
 import type { Cierre, Comanda, Jornada } from '../domain/tipos'
 
 interface Props { comandas: Comanda[]; ultimaJornada: Jornada | null; cierreHoy: Cierre | null }
 
 export function Mesero({ comandas, ultimaJornada, cierreHoy }: Props) {
   const jornada = ultimaJornada?.fecha === hoy() ? ultimaJornada : null
-  const [vista, setVista] = useState<'servir' | 'nueva'>('servir')
+  const [vista, setVista] = useState<'servir' | 'nueva' | 'abiertas'>('servir')
   const [aviso, setAviso] = useState<string | null>(null)
+  const [agregando, setAgregando] = useState<string | null>(null)
+  const [hecho, setHecho] = useState<string | null>(null)
+  const avisos = useAvisosNuevas(comandas)
+  const abiertas = comandas.filter(c => !c.pago && !c.anuladaEn && c.fecha === jornada?.fecha)
+  const enAgregar = abiertas.find(c => c.id === agregando)
   const listas = comandas.filter(c => c.estado === 'lista' && !c.anuladaEn)
   const conocidas = useRef<Set<string> | null>(null)
 
@@ -31,10 +38,37 @@ export function Mesero({ comandas, ultimaJornada, cierreHoy }: Props) {
         <button type="button" aria-pressed={vista === 'servir'} onClick={() => setVista('servir')}>
           Para servir{listas.length > 0 && <span className="badge">{listas.length}</span>}
         </button>
-        <button type="button" aria-pressed={vista === 'nueva'} onClick={() => setVista('nueva')}>Nueva comanda</button>
+        <button type="button" aria-pressed={vista === 'nueva'} onClick={() => { setVista('nueva'); setAgregando(null) }}>Nueva comanda</button>
+        <button type="button" aria-pressed={vista === 'abiertas'} onClick={() => { setVista('abiertas'); setHecho(null) }}>
+          Agregar a una cuenta{abiertas.length > 0 && <span className="badge">{abiertas.length}</span>}
+        </button>
       </div>
+      {!avisos.activo && <BotonActivarAvisos activar={avisos.activar} />}
 
-      {vista === 'nueva' ? (
+      {vista === 'abiertas' ? (
+        cierreHoy || !jornada ? <p className="vacio">No hay caja abierta hoy.</p>
+          : enAgregar ? (
+            <FormularioComanda key={enAgregar.id} jornada={jornada} agregarA={enAgregar}
+              alTerminar={m => { setAgregando(null); setHecho(m ?? null) }} />
+          ) : (
+            <section className="lista">
+              {hecho && <p className="msg ok aviso-ok" role="status">{hecho}</p>}
+              {abiertas.length === 0 && <p className="vacio">No hay cuentas sin cobrar.</p>}
+              {abiertas.map(c => (
+                <div className="tk" key={c.id}>
+                  <div className="tk-top">
+                    <span className="n">Nº {fmtNumero(c.numero)}</span>
+                    <span>{quien(c)}<br /><span className="d">{resumen(c)}</span></span>
+                    <span className="t">Bs {fmtBs(c.totalBs)}</span>
+                  </div>
+                  <div className="acts">
+                    <button type="button" className="btn sm" onClick={() => { setAgregando(c.id); setHecho(null) }}>Agregar</button>
+                  </div>
+                </div>
+              ))}
+            </section>
+          )
+      ) : vista === 'nueva' ? (
         cierreHoy ? <p className="vacio">La caja de hoy ya se cerró. No se pueden tomar más pedidos.</p>
           : jornada ? <FormularioComanda jornada={jornada} />
           : <p className="vacio">La caja todavía no abrió el día. Cuando el cajero ponga la tasa y los precios, podrás tomar pedidos.</p>
@@ -46,17 +80,19 @@ export function Mesero({ comandas, ultimaJornada, cierreHoy }: Props) {
       )}
 
       {aviso && <div className="aviso" role="status">{aviso}</div>}
+      {!aviso && avisos.aviso && <button type="button" className="aviso nueva" role="status" onClick={avisos.cerrarAviso}>{avisos.aviso}</button>}
     </div>
   )
 }
 
 function ParaServir({ c }: { c: Comanda }) {
   const [ocupado, setOcupado] = useState(false)
+  const a = ultimoAdicional(c)
   return (
     <div className="tk">
       <div className="tk-top">
         <span className="n">Nº {fmtNumero(c.numero)}</span>
-        <span>{quien(c)}<br /><span className="d">{resumen(c)} · lista {c.listaEn ? hora(c.listaEn) : ''}</span></span>
+        <span>{quien(c)}<br /><span className="d">{a ? `Adicional: ${resumen(a)}` : resumen(c)} · lista {c.listaEn ? hora(c.listaEn) : ''}</span></span>
         <span />
       </div>
       <div className="acts">

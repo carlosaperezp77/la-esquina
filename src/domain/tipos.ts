@@ -59,7 +59,25 @@ export interface Comanda {
   pago: Pago | null
   /** Si se anuló, cuándo. Una comanda anulada no cuenta como venta. */
   anuladaEn: string | null
+  /**
+   * Lo que el cliente pidió después, en orden. Ya está sumado en perros,
+   * bebidas, envases y totales; aquí queda para que cocina vea solo lo nuevo.
+   */
+  adicionales: Adicional[]
 }
+
+/** Lo que se agrega a una comanda sin cobrar. */
+export interface Adicional {
+  perros: LineaPerro[]
+  bebidas: Partial<Record<BebidaId, number>>
+  envases: number
+  observaciones: string
+  totalBs: number
+  creadoEn: string
+}
+
+/** Lo que se pide en una ronda: la comanda nueva sin nombre ni mesa. */
+export type Pedido = Pick<NuevaComanda, 'perros' | 'bebidas' | 'envases' | 'observaciones'>
 
 export interface NuevaComanda {
   nombre: string

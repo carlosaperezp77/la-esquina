@@ -63,3 +63,17 @@ describe('almacén en modo demo', () => {
     expect(l.find(c => c.id === c2.id)!.anuladaEn).toBeNull()
   })
 })
+
+describe('adicionales en modo demo', () => {
+  it('agrega a una comanda sin cobrar y rechaza las cobradas', async () => {
+    const a = new AlmacenLocal(new MemoriaStorage())
+    const c = await a.crear(nueva, jornada)
+    await a.cambiarEstado(c.id, 'entregada')
+    const n = await a.agregar(c.id, { perros: [], bebidas: { nestea: 1 }, envases: 0, observaciones: '' }, jornada)
+    expect(n.estado).toBe('nueva')
+    expect(n.totalBs).toBe(c.totalBs + 300)
+    expect(n.adicionales).toHaveLength(1)
+    await a.cobrar(c.id, 'efectivo', null, 'bs')
+    await expect(a.agregar(c.id, { perros: [], bebidas: { agua: 1 }, envases: 0, observaciones: '' }, jornada)).rejects.toThrow(/cobró/)
+  })
+})

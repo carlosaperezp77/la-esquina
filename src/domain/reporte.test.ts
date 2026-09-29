@@ -10,7 +10,7 @@ function comanda(p: Partial<Comanda>, pago: Omit<Pago, 'cobradaEn'> | null): Com
   return {
     id: String(n), numero: n, fecha: '2026-09-28', nombre: 'X', mesa: '', perros: [], bebidas: {}, envases: 0,
     observaciones: '', tasa: 200, totalBs: 0, totalUsd: 0, estado: 'entregada', creadaEn: '', listaEn: null,
-    entregadaEn: null, anuladaEn: null, pago: pago && { ...pago, cobradaEn: '' }, ...p,
+    entregadaEn: null, anuladaEn: null, adicionales: [], pago: pago && { ...pago, cobradaEn: '' }, ...p,
   }
 }
 

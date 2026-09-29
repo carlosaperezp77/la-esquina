@@ -252,3 +252,12 @@ textarea.box { width: 100%; min-height: 78px; resize: vertical; font-size: 17px;
 .insumo small.entregado b { color: var(--ink); }
 .insumo .dif { font-size: 14px; padding: 1px 8px; align-self: flex-start; }
 .unidad { font-weight: 500; color: inherit; opacity: .75; font-size: .85em; }
+.aviso.nueva { background: var(--mustard); color: var(--mustard-ink); border: 0; white-space: pre-line; text-align: left; cursor: pointer; font-family: inherit; top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; }
+.aviso-ok { font-size: 17px; flex: none; margin: 0; }
+.meta-adicional { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: #3a3220; border: 1.5px solid var(--mustard); border-radius: 12px; padding: 10px 14px; }
+.meta-adicional .lbl { color: var(--mustard); }
+.meta-adicional .quien { font-size: 19px; font-weight: 600; flex: 1; min-width: 0; }
+.tag-adicional { display: inline-block; background: var(--mustard); color: var(--mustard-ink); font-weight: 700; text-transform: uppercase; font-size: 14px; letter-spacing: .04em; padding: 2px 8px; border-radius: 6px; margin: 2px 0 4px; }
+.orden.con-adicional { outline: 2px solid var(--mustard); }
+.ya-servido { margin: 6px 0 0; color: var(--soft); font-size: 14px; }
+.aviso:not(.nueva) { pointer-events: none; }

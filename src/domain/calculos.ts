@@ -1,5 +1,5 @@
 import { BEBIDAS, INGREDIENTES } from './menu'
-import type { Comanda, Jornada, LineaPerro, NuevaComanda, Precios } from './tipos'
+import type { Adicional, BebidaId, Comanda, Jornada, LineaPerro, NuevaComanda, Pedido, Precios } from './tipos'
 
 export const esConTodo = (l: LineaPerro) =>
   INGREDIENTES.every(i => l.ingredientes.includes(i.id))
@@ -87,3 +87,81 @@ export const hoy = (d = new Date()) =>
 
 export const hora = (iso: string) =>
   new Date(iso).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false })
+
+/** Pedido sin filas vacías ni bebidas en cero. */
+export function limpiarPedido(p: Pedido): Pedido {
+  return {
+    perros: p.perros.filter(l => l.cant > 0),
+    bebidas: Object.fromEntries(Object.entries(p.bebidas).filter(([, v]) => v)),
+    envases: p.envases,
+    observaciones: p.observaciones.trim(),
+  }
+}
+
+/**
+ * Suma un adicional a una comanda sin cobrar con los precios del día. La
+ * comanda vuelve a "nueva" para que cocina prepare lo que se agregó. Si la
+ * comanda sigue en cocina, se agrega también a lo que cocina ya tiene y a
+ * sus observaciones.
+ */
+export function sumarAdicional(c: Comanda, extra: Pedido, precios: Precios, ahora = new Date().toISOString()): Comanda {
+  const p = limpiarPedido(extra)
+  const bs = totalBs(p, precios)
+  const bebidas = { ...c.bebidas }
+  for (const [b, n] of Object.entries(p.bebidas) as [BebidaId, number][]) bebidas[b] = (bebidas[b] ?? 0) + n
+  const total = redondear(c.totalBs + bs)
+  return {
+    ...c,
+    perros: [...c.perros, ...p.perros],
+    bebidas,
+    envases: c.envases + p.envases,
+    observaciones: c.estado !== 'entregada' && !c.adicionales?.length
+      ? [c.observaciones, p.observaciones].filter(Boolean).join(' · ')
+      : c.observaciones,
+    totalBs: total,
+    totalUsd: aDolares(total, c.tasa),
+    estado: 'nueva',
+    listaEn: null,
+    entregadaEn: null,
+    adicionales: juntarAdicional(c, { ...p, totalBs: bs, creadoEn: ahora }),
+  }
+}
+
+/**
+ * Si lo anterior todavía no se sirvió, lo nuevo va en la misma ronda para que
+ * cocina lo vea todo junto: se suma al último adicional pendiente, o a la
+ * comanda original si ella misma sigue en cocina (sin adicional aparte).
+ */
+function juntarAdicional(c: Comanda, a: Adicional): Adicional[] {
+  const previos = c.adicionales ?? []
+  if (c.estado === 'entregada') return [...previos, a]
+  const ultimo = previos.at(-1)
+  if (!ultimo) return previos
+  const bebidas = { ...ultimo.bebidas }
+  for (const [b, n] of Object.entries(a.bebidas) as [BebidaId, number][]) bebidas[b] = (bebidas[b] ?? 0) + n
+  return [...previos.slice(0, -1), {
+    perros: [...ultimo.perros, ...a.perros],
+    bebidas,
+    envases: ultimo.envases + a.envases,
+    observaciones: [ultimo.observaciones, a.observaciones].filter(Boolean).join(' · '),
+    totalBs: redondear(ultimo.totalBs + a.totalBs),
+    creadoEn: a.creadoEn,
+  }]
+}
+
+/** La última ronda que falta servir: el último adicional si la comanda volvió a cocina. */
+export const ultimoAdicional = (c: Comanda): Adicional | null =>
+  c.adicionales?.length && c.estado !== 'entregada' ? c.adicionales[c.adicionales.length - 1] : null
+
+/** La comanda sin su último adicional: lo que ya se sirvió antes. */
+export function sinUltimoAdicional(c: Comanda): Pick<Comanda, 'perros' | 'bebidas' | 'envases'> {
+  const a = c.adicionales?.at(-1)
+  if (!a) return c
+  const bebidas = { ...c.bebidas }
+  for (const [b, n] of Object.entries(a.bebidas) as [BebidaId, number][]) bebidas[b] = (bebidas[b] ?? 0) - n
+  return {
+    perros: c.perros.slice(0, c.perros.length - a.perros.length),
+    bebidas: Object.fromEntries(Object.entries(bebidas).filter(([, v]) => v)),
+    envases: c.envases - a.envases,
+  }
+}

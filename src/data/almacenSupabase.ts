@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { aDolares, hoy, redondear, totalBs } from '../domain/calculos'
-import type { Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda, Precios, ResumenDia } from '../domain/tipos'
+import { aDolares, hoy, redondear, sumarAdicional, totalBs } from '../domain/calculos'
+import type { Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda, Pedido, Precios, ResumenDia } from '../domain/tipos'
 import type { Almacen } from './almacen'
 
 interface Fila {
@@ -25,6 +25,7 @@ interface Fila {
   pago_moneda: Moneda | null
   cobrada_en: string | null
   anulada_en: string | null
+  adicionales: Comanda['adicionales'] | null
 }
 
 const aComanda = (f: Fila): Comanda => ({
@@ -49,6 +50,7 @@ const aComanda = (f: Fila): Comanda => ({
     ? { metodo: f.pago_metodo, referencia: f.pago_referencia, moneda: f.pago_moneda, cobradaEn: f.cobrada_en }
     : null,
   anuladaEn: f.anulada_en,
+  adicionales: f.adicionales ?? [],
 })
 
 interface FilaJornada {
@@ -171,6 +173,28 @@ export class AlmacenSupabase implements Almacen {
     if (estado === 'entregada') cambios.entregada_en = ahora
     const { error } = await this.db.from('comandas').update(cambios).eq('id', id)
     if (error) throw error
+  }
+
+  async agregar(id: string, extra: Pedido, jornada: Jornada) {
+    const { data: fila, error: e1 } = await this.db.from('comandas').select('*').eq('id', id).single()
+    if (e1) throw e1
+    const c = aComanda(fila as Fila)
+    if (c.pago || c.anuladaEn) throw new Error('Esa comanda ya se cobró o se anuló.')
+    const n = sumarAdicional(c, extra, jornada.precios)
+    // Solo si sigue sin cobrar: si alguien la cobró mientras tanto, no se toca.
+    const { data, error } = await this.db
+      .from('comandas')
+      .update({
+        perros: n.perros, bebidas: n.bebidas, envases: n.envases, total_bs: n.totalBs, total_usd: n.totalUsd,
+        estado: n.estado, lista_en: null, entregada_en: null, adicionales: n.adicionales,
+      })
+      .eq('id', id)
+      .is('cobrada_en', null)
+      .is('anulada_en', null)
+      .select()
+    if (error) throw error
+    if (!data?.length) throw new Error('Esa comanda ya se cobró o se anuló.')
+    return aComanda(data[0] as Fila)
   }
 
   async anular(id: string) {

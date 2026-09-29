@@ -1,4 +1,4 @@
-import type { Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda } from '../domain/tipos'
+import type { Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda, Pedido } from '../domain/tipos'
 
 /** Operaciones que comparten caja, cocina y meseros. */
 export interface Almacen {
@@ -15,6 +15,8 @@ export interface Almacen {
   /** Crea la comanda con la tasa y los precios de la jornada. */
   crear(c: NuevaComanda, jornada: Jornada): Promise<Comanda>
   cambiarEstado(id: string, estado: EstadoComanda): Promise<void>
+  /** Suma lo que el cliente pidió después a su comanda sin cobrar y la devuelve a cocina. */
+  agregar(id: string, extra: Pedido, jornada: Jornada): Promise<Comanda>
   /** Anula una comanda sin cobrar: sale de cocina y no cuenta como venta. */
   anular(id: string): Promise<void>
   /** `moneda` solo aplica al efectivo. */

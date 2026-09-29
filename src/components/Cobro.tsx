@@ -29,7 +29,7 @@ export function TarjetaComanda({ c, children }: { c: Comanda; children?: React.R
           <span className="d">
             {pagada
               ? `${metodo}${c.pago?.moneda ? (c.pago.moneda === 'usd' ? ' en $' : ' en Bs') : ''}${c.pago?.referencia ? ` · ref. ${c.pago.referencia}` : ''} · ${hora(c.pago!.cobradaEn)}`
-              : `${resumen(c)} · ${hora(c.creadaEn)}`}
+              : `${resumen(c)}${c.adicionales?.length ? ` · ${c.adicionales.length} adicional${c.adicionales.length > 1 ? 'es' : ''}` : ''} · ${hora(c.creadaEn)}`}
           </span>
         </span>
         <span className="t">Bs {fmtBs(c.totalBs)}<span className="d">${fmtUsd(c.totalUsd)}</span></span>
@@ -40,7 +40,7 @@ export function TarjetaComanda({ c, children }: { c: Comanda; children?: React.R
 }
 
 /** Tarjeta "por cobrar" con el panel de forma de pago del prototipo. */
-export function PorCobrar({ c }: { c: Comanda }) {
+export function PorCobrar({ c, onAgregar }: { c: Comanda; onAgregar?: () => void }) {
   const [abierto, setAbierto] = useState(false)
   const [metodo, setMetodo] = useState<MetodoPago | null>(null)
   const [referencia, setReferencia] = useState('')
@@ -72,6 +72,7 @@ export function PorCobrar({ c }: { c: Comanda }) {
             onClick={() => (anulando ? void almacen.anular(c.id) : setAnulando(true))}>
             {anulando ? 'Sí, anular' : 'Anular'}
           </button>
+          {!anulando && onAgregar && <button type="button" className="btn ghost sm" onClick={onAgregar}>Agregar</button>}
           {anulando
             ? <button type="button" className="btn sm" onClick={() => setAnulando(false)}>No</button>
             : <button type="button" className="btn sm" onClick={() => setAbierto(true)}>Cobrar</button>}

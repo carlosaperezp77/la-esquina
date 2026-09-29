@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { almacen } from '../data'
-import { aDolares, esConTodo, fmtBs, fmtNumero, fmtUsd, totalBs, validar } from '../domain/calculos'
+import { aDolares, esConTodo, fmtBs, fmtNumero, fmtUsd, quien, totalBs, validar } from '../domain/calculos'
 import { BEBIDAS, INGREDIENTES, MESAS } from '../domain/menu'
-import type { BebidaId, IngredienteId, Jornada, LineaPerro } from '../domain/tipos'
+import type { BebidaId, Comanda, IngredienteId, Jornada, LineaPerro } from '../domain/tipos'
 import { IconoEnvase } from './Iconos'
 import { Fecha, Hora } from './Reloj'
 import { useAhora } from './useAhora'
@@ -11,8 +11,16 @@ const FILAS_INICIALES = 4
 
 const filasVacias = () => Array.from({ length: FILAS_INICIALES }, (): LineaPerro => ({ cant: 0, ingredientes: [] }))
 
-/** Toma de pedido con el diseño del prototipo. La usan caja y meseros. */
-export function FormularioComanda({ jornada }: { jornada: Jornada }) {
+interface Props {
+  jornada: Jornada
+  /** Si viene, el pedido se suma a esta comanda sin cobrar en vez de crear una nueva. */
+  agregarA?: Comanda
+  /** Se llama al agregar con éxito (con el mensaje para mostrar) o al cancelar (sin mensaje). */
+  alTerminar?: (mensaje?: string) => void
+}
+
+/** Toma de pedido con el diseño del prototipo. La usan caja y meseros, también para adicionales. */
+export function FormularioComanda({ jornada, agregarA, alTerminar }: Props) {
   const ahora = useAhora()
   const [nombre, setNombre] = useState('')
   const [mesa, setMesa] = useState('')
@@ -50,11 +58,18 @@ export function FormularioComanda({ jornada }: { jornada: Jornada }) {
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault()
-    const nueva = { nombre, mesa, perros, bebidas, envases, observaciones }
+    const pedido = { perros, bebidas, envases, observaciones }
+    const nueva = agregarA ? { ...pedido, nombre: agregarA.nombre, mesa: agregarA.mesa } : { ...pedido, nombre, mesa }
     const error = validar(nueva)
     if (error) return setMensaje({ texto: error, ok: false })
     setEnviando(true)
     try {
+      if (agregarA) {
+        const c = await almacen.agregar(agregarA.id, pedido, jornada)
+        limpiar()
+        alTerminar?.(`Adicional agregado a la comanda Nº ${fmtNumero(c.numero)} y enviado a cocina. Ahora debe Bs ${fmtBs(c.totalBs)}.`)
+        return
+      }
       const c = await almacen.crear(nueva, jornada)
       setMensaje({ texto: `Comanda Nº ${fmtNumero(c.numero)} enviada a cocina. Queda por cobrar.`, ok: true })
       limpiar()
@@ -66,7 +81,14 @@ export function FormularioComanda({ jornada }: { jornada: Jornada }) {
   }
 
   return (
-    <form className="wrap" onSubmit={enviar} noValidate style={{ width: '100%' }}>
+    <form className={`wrap${agregarA ? ' agregando' : ''}`} onSubmit={enviar} noValidate style={{ width: '100%' }}>
+      {agregarA ? (
+        <div className="meta-adicional">
+          <span className="lbl">Adicional para Nº {fmtNumero(agregarA.numero)}</span>
+          <span className="quien">{quien(agregarA)} · debe Bs {fmtBs(agregarA.totalBs)}</span>
+          <button type="button" className="btn ghost sm" onClick={() => alTerminar?.()}>Cancelar</button>
+        </div>
+      ) : (
       <div className="meta">
         <label className="field grow">
           <span className="lbl">Nombre:</span>
@@ -83,6 +105,7 @@ export function FormularioComanda({ jornada }: { jornada: Jornada }) {
         <div className="field"><span className="lbl">Fecha:</span><Fecha ahora={ahora} /></div>
         <div className="field"><span className="lbl">Hora:</span><Hora ahora={ahora} /></div>
       </div>
+      )}
 
       <div className="gridwrap">
         <div className="grid">
@@ -156,19 +179,20 @@ export function FormularioComanda({ jornada }: { jornada: Jornada }) {
             value={observaciones} onChange={e => setObservaciones(e.target.value)} />
         </section>
         <section className="panel monto">
-          <span className="lbl">Monto: Bs</span>
+          <span className="lbl">{agregarA ? 'Adicional: Bs' : 'Monto: Bs'}</span>
           <span className="box val">{fmtBs(bs)}</span>
           <div className="bs">
             <span>$ <strong>{fmtUsd(usd)}</strong></span>
             <span>Tasa BCV {fmtBs(jornada.tasa)}</span>
           </div>
+          {agregarA && <div className="bs"><span>Cuenta total: <strong>Bs {fmtBs(agregarA.totalBs + bs)}</strong></span></div>}
         </section>
       </div>
 
       <div className="send">
         <span className={`msg ${mensaje?.ok ? 'ok' : 'err'}`} role="status">{mensaje?.texto}</span>
         <button type="button" className="btn ghost" onClick={() => { limpiar(); setMensaje(null) }}>Limpiar</button>
-        <button type="submit" className="btn" disabled={enviando}>{enviando ? 'Enviando…' : 'Enviar a cocina'}</button>
+        <button type="submit" className="btn" disabled={enviando}>{enviando ? 'Enviando…' : agregarA ? 'Agregar y enviar a cocina' : 'Enviar a cocina'}</button>
       </div>
     </form>
   )
