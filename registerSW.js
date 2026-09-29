@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/la-esquina/sw.js', { scope: '/la-esquina/' })})}
