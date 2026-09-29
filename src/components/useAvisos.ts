@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fmtNumero, quien, resumen, ultimoAdicional } from '../domain/calculos'
+import { almacen } from '../data'
 import type { Comanda } from '../domain/tipos'
 
 /** Tres pitidos fuertes con Web Audio; el navegador solo lo permite después de un toque. */
@@ -56,12 +57,41 @@ const clave = (c: Comanda) => `${c.id}:${c.totalBs}`
  * a cocina una comanda nueva o un adicional. El sonido necesita un toque en
  * la pantalla después de abrir la app, y la notificación, el permiso.
  */
-export function useAvisosNuevas(comandas: Comanda[]) {
+const pushDisponible = () => typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window
+
+const esIphoneSinInstalar = () =>
+  /iPhone|iPad/.test(navigator.userAgent) && !(navigator as { standalone?: boolean }).standalone
+
+/** La clave pública viene en base64 url-safe; el navegador la quiere en bytes. */
+function aBytes(base64: string): Uint8Array<ArrayBuffer> {
+  const b = atob((base64 + '='.repeat((4 - (base64.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/'))
+  return Uint8Array.from(b, ch => ch.charCodeAt(0))
+}
+
+/** Suscribe este teléfono a los avisos del servidor. Devuelve false si no se pudo. */
+async function suscribirPush(rol: 'cocina' | 'mesero', pedir: boolean): Promise<boolean> {
+  if (!pushDisponible() || Notification.permission !== 'granted') return false
+  const reg = await navigator.serviceWorker.ready
+  let sub = await reg.pushManager.getSubscription()
+  if (!sub && pedir) {
+    const clave = await almacen.clavePush()
+    if (!clave) return false
+    sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: aBytes(clave) })
+  }
+  if (!sub) return false
+  await almacen.guardarSuscripcion(sub.toJSON(), rol)
+  return true
+}
+
+export function useAvisosNuevas(comandas: Comanda[], rol: 'cocina' | 'mesero') {
   const audio = useRef<AudioContext | null>(null)
   const [activo, setActivo] = useState(false)
+  const [push, setPush] = useState(false)
+  const [nota, setNota] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
   const vistas = useRef<Set<string> | null>(null)
   const nuevas = comandas.filter(c => c.estado === 'nueva' && !c.anuladaEn && !c.pago)
+  const conServidor = almacen.modo === 'en-linea'
 
   const activarSonido = useCallback(() => {
     audio.current ??= new AudioContext()
@@ -71,8 +101,34 @@ export function useAvisosNuevas(comandas: Comanda[]) {
 
   const activar = useCallback(() => {
     activarSonido()
-    if (typeof Notification !== 'undefined' && Notification.permission === 'default') void Notification.requestPermission()
-  }, [activarSonido])
+    if (typeof Notification === 'undefined') {
+      setNota(esIphoneSinInstalar()
+        ? 'En iPhone, primero agrega la app a la pantalla de inicio (Safari → Compartir → Agregar a inicio) y ábrela desde el ícono.'
+        : 'Este navegador no permite notificaciones.')
+      return
+    }
+    // En iPhone el permiso se tiene que pedir justo en el toque, antes de esperar otra cosa.
+    const permiso = Notification.permission === 'default' ? Notification.requestPermission() : Promise.resolve(Notification.permission)
+    void permiso.then(async p => {
+      if (p !== 'granted') return setNota('Las notificaciones están bloqueadas. Actívalas en los ajustes del teléfono para esta app.')
+      if (!conServidor) return setNota(null)
+      try {
+        const ok = await suscribirPush(rol, true)
+        setPush(ok)
+        setNota(ok ? null : esIphoneSinInstalar()
+          ? 'Para avisos con el iPhone bloqueado, agrega la app a la pantalla de inicio y ábrela desde el ícono.'
+          : 'Este teléfono solo avisará con la app abierta.')
+      } catch (e) {
+        setNota(`No se pudieron activar los avisos con el teléfono bloqueado: ${e instanceof Error ? e.message : String(e)}`)
+      }
+    })
+  }, [activarSonido, conServidor, rol])
+
+  // Si este teléfono ya estaba suscrito, se vuelve a guardar por si cambió.
+  useEffect(() => {
+    if (!conServidor) return
+    suscribirPush(rol, false).then(setPush, () => setPush(false))
+  }, [conServidor, rol])
 
   // Cualquier toque en la pantalla sirve para activar el sonido, así no hay
   // que volver a tocar el botón cada vez que se recarga la app.
@@ -91,11 +147,13 @@ export function useAvisosNuevas(comandas: Comanda[]) {
     setAviso(texto)
     if (audio.current) void pitar(audio.current)
     navigator.vibrate?.(VIBRACION)
-    void notificar(texto)
+    // Con avisos del servidor, la notificación ya la muestra el teléfono.
+    if (!push) void notificar(texto)
     const t = setTimeout(() => setAviso(null), 10000)
     return () => clearTimeout(t)
-  }, [nuevas])
+  }, [nuevas, push])
 
   const faltaPermiso = typeof Notification !== 'undefined' && Notification.permission === 'default'
-  return { mostrarBoton: !activo || faltaPermiso, activar, aviso, cerrarAviso: () => setAviso(null) }
+  const faltaPush = conServidor && !push && pushDisponible()
+  return { mostrarBoton: !activo || faltaPermiso || faltaPush || !!nota, nota, activar, aviso, cerrarAviso: () => setAviso(null) }
 }

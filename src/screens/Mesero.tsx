@@ -14,7 +14,7 @@ export function Mesero({ comandas, ultimaJornada, cierreHoy }: Props) {
   const [aviso, setAviso] = useState<string | null>(null)
   const [agregando, setAgregando] = useState<string | null>(null)
   const [hecho, setHecho] = useState<string | null>(null)
-  const avisos = useAvisosNuevas(comandas)
+  const avisos = useAvisosNuevas(comandas, 'mesero')
   const abiertas = comandas.filter(c => !c.pago && !c.anuladaEn && c.fecha === jornada?.fecha)
   const enAgregar = abiertas.find(c => c.id === agregando)
   const listas = comandas.filter(c => c.estado === 'lista' && !c.anuladaEn)
@@ -43,7 +43,7 @@ export function Mesero({ comandas, ultimaJornada, cierreHoy }: Props) {
           Agregar a una cuenta{abiertas.length > 0 && <span className="badge">{abiertas.length}</span>}
         </button>
       </div>
-      {avisos.mostrarBoton && <BotonActivarAvisos activar={avisos.activar} />}
+      {avisos.mostrarBoton && <BotonActivarAvisos activar={avisos.activar} nota={avisos.nota} />}
 
       {vista === 'abiertas' ? (
         cierreHoy || !jornada ? <p className="vacio">No hay caja abierta hoy.</p>

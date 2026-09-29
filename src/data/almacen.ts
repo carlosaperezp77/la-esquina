@@ -21,6 +21,10 @@ export interface Almacen {
   anular(id: string): Promise<void>
   /** `moneda` solo aplica al efectivo. */
   cobrar(id: string, metodo: MetodoPago, referencia: string | null, moneda: Moneda | null): Promise<void>
+  /** Clave pública del servidor de avisos, o null si no hay (modo demo). */
+  clavePush(): Promise<string | null>
+  /** Guarda la suscripción de este teléfono para recibir avisos con la app cerrada. */
+  guardarSuscripcion(s: PushSubscriptionJSON, rol: 'cocina' | 'mesero'): Promise<void>
   /** Cierre de caja de esa fecha, o null si el día sigue abierto. */
   cierre(fecha: string): Promise<Cierre | null>
   /** Guarda el cierre del día. Falla si ese día ya se cerró. */

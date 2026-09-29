@@ -128,6 +128,10 @@ export class AlmacenLocal implements Almacen {
     this.guardar(this.leer().map(c => c.id !== id ? c : { ...c, pago: { metodo, referencia, moneda, cobradaEn } }))
   }
 
+  // En modo demo no hay servidor de avisos; avisa la pantalla abierta.
+  async clavePush() { return null }
+  async guardarSuscripcion() {}
+
   async cierre(fecha: string) {
     return this.leerDe<Cierre>(CLAVE_CIERRES).find(c => c.fecha === fecha) ?? null
   }

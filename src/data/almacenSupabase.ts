@@ -97,8 +97,10 @@ const aCierre = (f: FilaCierre): Cierre => ({
 export class AlmacenSupabase implements Almacen {
   readonly modo = 'en-linea' as const
   private db: SupabaseClient
+  private url: string
 
   constructor(url: string, clave: string) {
+    this.url = url
     this.db = createClient(url, clave)
   }
 
@@ -211,6 +213,20 @@ export class AlmacenSupabase implements Almacen {
       .from('comandas')
       .update({ pago_metodo: metodo, pago_referencia: referencia, pago_moneda: moneda, cobrada_en: new Date().toISOString() })
       .eq('id', id)
+    if (error) throw error
+  }
+
+  async clavePush() {
+    const r = await fetch(`${this.url}/functions/v1/avisar-comanda`)
+    if (!r.ok) throw new Error('La función de avisos no está publicada en Supabase.')
+    const { publica } = await r.json() as { publica: string }
+    return publica
+  }
+
+  async guardarSuscripcion(s: PushSubscriptionJSON, rol: 'cocina' | 'mesero') {
+    const { error } = await this.db.rpc('guardar_suscripcion', {
+      p_endpoint: s.endpoint, p_p256dh: s.keys?.p256dh, p_auth: s.keys?.auth, p_rol: rol,
+    })
     if (error) throw error
   }
 
