@@ -13,12 +13,12 @@ const CARRILES: { estado: EstadoComanda; titulo: string; boton: string; siguient
 ]
 
 export function Cocina({ comandas }: { comandas: Comanda[] }) {
-  const { activo, activar, aviso, cerrarAviso } = useAvisosNuevas(comandas)
+  const { mostrarBoton, activar, aviso, cerrarAviso } = useAvisosNuevas(comandas)
   const activas = comandas.filter(c => c.estado !== 'entregada' && !c.anuladaEn)
 
   return (
     <div className="wrap">
-      {!activo && <BotonActivarAvisos activar={activar} />}
+      {mostrarBoton && <BotonActivarAvisos activar={activar} />}
       <div className="cocina">
         {CARRILES.map(k => {
           const cs = activas.filter(c => c.estado === k.estado)

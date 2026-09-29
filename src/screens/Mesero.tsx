@@ -43,7 +43,7 @@ export function Mesero({ comandas, ultimaJornada, cierreHoy }: Props) {
           Agregar a una cuenta{abiertas.length > 0 && <span className="badge">{abiertas.length}</span>}
         </button>
       </div>
-      {!avisos.activo && <BotonActivarAvisos activar={avisos.activar} />}
+      {avisos.mostrarBoton && <BotonActivarAvisos activar={avisos.activar} />}
 
       {vista === 'abiertas' ? (
         cierreHoy || !jornada ? <p className="vacio">No hay caja abierta hoy.</p>

@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      workbox: { globPatterns: ['**/*.{js,css,html,png}'] },
+      workbox: { globPatterns: ['**/*.{js,css,html,png}'], importScripts: ['sw-avisos.js'] },
       manifest: {
         name: 'La Esquina',
         short_name: 'La Esquina',
