@@ -1,10 +1,16 @@
 import { aDolares, diaAnterior, hoy, sumarAdicional, totalBs } from '../domain/calculos'
-import type { Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda, Pedido } from '../domain/tipos'
+import { validarNuevoUsuario } from '../domain/accesos'
+import type { CambioUsuario, Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda, NuevoUsuario, Pedido, Usuario } from '../domain/tipos'
 import type { Almacen } from './almacen'
 
 const CLAVE = 'la-esquina:comandas'
 const CLAVE_JORNADAS = 'la-esquina:jornadas'
 const CLAVE_CIERRES = 'la-esquina:cierres'
+const CLAVE_USUARIOS = 'la-esquina:usuarios'
+const CLAVE_SESION = 'la-esquina:sesion'
+
+/** En modo demo la clave se guarda tal cual: solo sirve para probar en un equipo. */
+type UsuarioDemo = Usuario & { clave: string }
 
 /**
  * Modo demo: guarda en este navegador y avisa a las otras pestañas del mismo
@@ -17,9 +23,12 @@ export class AlmacenLocal implements Almacen {
   private oyentes = new Set<() => void>()
 
   private storage: Storage
+  /** Cada pestaña tiene su propia sesión, para probar varios roles a la vez. */
+  private sesiones: Storage
 
-  constructor(storage: Storage = localStorage) {
+  constructor(storage: Storage = localStorage, sesiones: Storage = typeof sessionStorage !== 'undefined' ? sessionStorage : storage) {
     this.storage = storage
+    this.sesiones = sesiones
     this.canal?.addEventListener('message', () => this.avisar(false))
     if (typeof window !== 'undefined')
       window.addEventListener('storage', e => { if (e.key?.startsWith('la-esquina:')) this.avisar(false) })
@@ -163,5 +172,74 @@ export class AlmacenLocal implements Almacen {
     this.storage.setItem(CLAVE_CIERRES, JSON.stringify([...cs, nuevo]))
     this.avisar(true)
     return nuevo
+  }
+
+  private leerUsuarios() { return this.leerDe<UsuarioDemo>(CLAVE_USUARIOS) }
+  private guardarUsuarios(us: UsuarioDemo[]) { this.storage.setItem(CLAVE_USUARIOS, JSON.stringify(us)) }
+  private sinClave = ({ id, usuario, nombre, rol, activo }: UsuarioDemo): Usuario => ({ id, usuario, nombre, rol, activo })
+
+  async estadoAccesos() {
+    return this.leerUsuarios().some(u => u.rol === 'admin' && u.activo) ? 'listo' as const : 'sin-admin' as const
+  }
+
+  async sesion() {
+    const id = this.sesiones.getItem(CLAVE_SESION)
+    const u = this.leerUsuarios().find(x => x.id === id && x.activo)
+    return u ? this.sinClave(u) : null
+  }
+
+  async entrar(usuario: string, clave: string) {
+    const u = this.leerUsuarios().find(x => x.usuario === usuario.trim().toLowerCase() && x.clave === clave)
+    if (!u) throw new Error('Usuario o clave incorrectos.')
+    if (!u.activo) throw new Error('Este usuario está desactivado. Habla con el administrador.')
+    this.sesiones.setItem(CLAVE_SESION, u.id)
+    return this.sinClave(u)
+  }
+
+  async salir() { this.sesiones.removeItem(CLAVE_SESION) }
+
+  async crearAdmin(n: Omit<NuevoUsuario, 'rol'>) {
+    if (await this.estadoAccesos() === 'listo') throw new Error('El administrador ya existe. Entra con tu usuario.')
+    await this.agregarUsuario({ ...n, rol: 'admin' })
+  }
+
+  private async agregarUsuario(n: NuevoUsuario) {
+    const err = validarNuevoUsuario(n)
+    if (err) throw new Error(err)
+    const usuario = n.usuario.trim().toLowerCase()
+    const us = this.leerUsuarios()
+    if (us.some(u => u.usuario === usuario)) throw new Error(`Ya existe el usuario "${usuario}".`)
+    this.guardarUsuarios([...us, { id: crypto.randomUUID(), usuario, nombre: n.nombre.trim(), rol: n.rol, activo: true, clave: n.clave }])
+  }
+
+  private async yoAdmin() {
+    if ((await this.sesion())?.rol !== 'admin') throw new Error('Solo el administrador puede manejar usuarios.')
+    return this.sesiones.getItem(CLAVE_SESION)
+  }
+
+  async usuarios() {
+    await this.yoAdmin()
+    return this.leerUsuarios().map(this.sinClave)
+  }
+
+  async crearUsuario(n: NuevoUsuario) {
+    await this.yoAdmin()
+    await this.agregarUsuario(n)
+  }
+
+  async cambiarUsuario(id: string, c: CambioUsuario) {
+    const yo = await this.yoAdmin()
+    if (id === yo && (c.activo === false || (c.rol && c.rol !== 'admin'))) {
+      throw new Error('No puedes quitarte a ti mismo el acceso de administrador.')
+    }
+    if (c.clave !== undefined && c.clave.length < 6) throw new Error('La clave debe tener al menos 6 caracteres.')
+    if (c.nombre !== undefined && !c.nombre.trim()) throw new Error('Escribe el nombre de la persona.')
+    this.guardarUsuarios(this.leerUsuarios().map(u => (u.id === id ? { ...u, ...c } : u)))
+  }
+
+  async borrarUsuario(id: string) {
+    const yo = await this.yoAdmin()
+    if (id === yo) throw new Error('No puedes borrar tu propio usuario.')
+    this.guardarUsuarios(this.leerUsuarios().filter(u => u.id !== id))
   }
 }

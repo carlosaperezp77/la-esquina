@@ -1,4 +1,4 @@
-import type { Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda, Pedido } from '../domain/tipos'
+import type { CambioUsuario, Cierre, Comanda, EstadoAccesos, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda, NuevoUsuario, Pedido, Usuario } from '../domain/tipos'
 
 /** Operaciones que comparten caja, cocina y meseros. */
 export interface Almacen {
@@ -34,4 +34,18 @@ export interface Almacen {
   cierre(fecha: string): Promise<Cierre | null>
   /** Guarda el cierre del día. Falla si ese día ya se cerró. */
   cerrarDia(c: Omit<Cierre, 'cerradoEn'>): Promise<Cierre>
+
+  /** Si ya se puede entrar con usuario y clave (ver `EstadoAccesos`). */
+  estadoAccesos(): Promise<EstadoAccesos>
+  /** Usuario conectado en este equipo, o null si nadie entró. */
+  sesion(): Promise<Usuario | null>
+  entrar(usuario: string, clave: string): Promise<Usuario>
+  salir(): Promise<void>
+  /** Crea el primer administrador; falla si ya existe uno. */
+  crearAdmin(n: Omit<NuevoUsuario, 'rol'>): Promise<void>
+  /** Solo para el administrador. */
+  usuarios(): Promise<Usuario[]>
+  crearUsuario(n: NuevoUsuario): Promise<void>
+  cambiarUsuario(id: string, c: CambioUsuario): Promise<void>
+  borrarUsuario(id: string): Promise<void>
 }

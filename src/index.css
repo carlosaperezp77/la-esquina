@@ -261,3 +261,25 @@ textarea.box { width: 100%; min-height: 78px; resize: vertical; font-size: 17px;
 .orden.con-adicional { outline: 2px solid var(--mustard); }
 .ya-servido { margin: 6px 0 0; color: var(--soft); font-size: 14px; }
 .aviso { pointer-events: none; }
+
+/* Accesos por usuario */
+.acceso { max-width: 460px; }
+.acceso .panel .box { width: 100%; font-size: 20px; }
+.acceso .panel .lbl { margin-top: 4px; }
+.nuevo-usuario .campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px 14px; }
+.nuevo-usuario label, .rol-sel { display: flex; flex-direction: column; gap: 4px; font-size: 15px; font-weight: 700; color: var(--soft); }
+.nuevo-usuario .box { width: 100%; min-width: 0; font-size: 18px; }
+.rol-sel { flex-direction: row; align-items: center; gap: 8px; margin-right: auto; }
+select.box { font-size: 17px; padding: 6px 8px; background: var(--panel); }
+.usuario .tk-top { grid-template-columns: auto 1fr auto; }
+.usuario .d b { color: var(--ink); }
+.roles-ayuda ul { margin: 0; padding-left: 18px; color: var(--soft); font-size: 16px; display: flex; flex-direction: column; gap: 4px; }
+.roles-ayuda b { color: var(--ink); }
+.nav .quien { font-size: 14px; color: var(--soft); display: flex; align-items: center; gap: 8px; }
+.nav .quien b { color: var(--ink); }
+.nav .quien button { background: transparent; border: 1.5px solid #55534d; color: var(--soft); border-radius: 8px; font: 700 14px var(--f); padding: 4px 10px; cursor: pointer; }
+@media screen and (max-width: 760px) {
+  .usuario .tk-top { grid-template-columns: 1fr auto; }
+  .usuario .tk-top .d { grid-column: 1 / -1; grid-row: 2; }
+}
+.usuarios > .msg { flex: none; margin: 0; }

@@ -1,15 +1,18 @@
 import logo from '../assets/iconos/logo.png'
 import lema from '../assets/iconos/tag.png'
 import { almacen } from '../data'
-import type { Rol } from '../App'
+import { nombreRol, type Pantalla } from '../domain/accesos'
+import type { Usuario } from '../domain/tipos'
 
-const ROLES: { id: Rol; nombre: string }[] = [
-  { id: 'caja', nombre: 'Caja' },
-  { id: 'cocina', nombre: 'Cocina' },
-  { id: 'mesero', nombre: 'Mesero' },
-]
+const NOMBRES: Record<Pantalla, string> = { caja: 'Caja', cocina: 'Cocina', mesero: 'Mesero', usuarios: 'Usuarios' }
 
-export function Encabezado({ numero, rol }: { numero?: string; rol: Rol | null }) {
+export function Encabezado({ numero, pantalla = null, permitidas = [], usuario = null, salir }: {
+  numero?: string
+  pantalla?: Pantalla | null
+  permitidas?: Pantalla[]
+  usuario?: Usuario | null
+  salir?: () => void
+}) {
   return (
     <>
       <header className="top">
@@ -23,14 +26,23 @@ export function Encabezado({ numero, rol }: { numero?: string; rol: Rol | null }
           )}
         </div>
       </header>
-      <nav className="nav">
+      <nav className="nav no-print">
         <div className="nav-in">
-          {ROLES.map(r => (
-            <a key={r.id} href={`#${r.id}`} aria-current={rol === r.id ? 'page' : undefined}>{r.nombre}</a>
+          {permitidas.map(p => (
+            <a key={p} href={`#${p}`} aria-current={pantalla === p ? 'page' : undefined}>{NOMBRES[p]}</a>
           ))}
-          <span className="modo">
-            {almacen.modo === 'demo' ? <>Modo <b>demo</b>: solo este equipo</> : <>En línea</>}
-          </span>
+          {usuario
+            ? (
+              <span className="modo quien">
+                <span><b>{usuario.nombre}</b> · {nombreRol(usuario.rol)}</span>
+                {salir && <button type="button" onClick={salir}>Salir</button>}
+              </span>
+            )
+            : (
+              <span className="modo">
+                {almacen.modo === 'demo' ? <>Modo <b>demo</b>: solo este equipo</> : <>En línea</>}
+              </span>
+            )}
         </div>
       </nav>
     </>

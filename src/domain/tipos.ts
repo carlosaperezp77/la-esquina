@@ -147,3 +147,31 @@ export interface ResumenDia {
   pendientes: number
   pendientesBs: number
 }
+
+/** Rol de cada persona con acceso a la app. */
+export type RolUsuario = 'admin' | 'gerencia' | 'caja' | 'cocina' | 'mesero'
+
+export interface Usuario {
+  id: string
+  /** Con lo que entra: letras y números, sin espacios. */
+  usuario: string
+  nombre: string
+  rol: RolUsuario
+  activo: boolean
+}
+
+export interface NuevoUsuario {
+  usuario: string
+  nombre: string
+  clave: string
+  rol: RolUsuario
+}
+
+export type CambioUsuario = Partial<Pick<Usuario, 'nombre' | 'rol' | 'activo'>> & { clave?: string }
+
+/**
+ * Cómo está el inicio de sesión: `sin-configurar` mientras no se haya
+ * publicado la función de usuarios (la app sigue como antes, sin clave),
+ * `sin-admin` cuando falta crear el administrador, `listo` en adelante.
+ */
+export type EstadoAccesos = 'sin-configurar' | 'sin-admin' | 'listo'

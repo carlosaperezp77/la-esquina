@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { aDolares, diaAnterior, hoy, redondear, sumarAdicional, totalBs } from '../domain/calculos'
-import type { Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda, Pedido, Precios, ResumenDia } from '../domain/tipos'
+import { correoDe } from '../domain/accesos'
+import type { CambioUsuario, Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda, NuevoUsuario, Pedido, Precios, ResumenDia, Usuario } from '../domain/tipos'
 import type { Almacen } from './almacen'
 
 interface Fila {
@@ -277,4 +278,87 @@ export class AlmacenSupabase implements Almacen {
     if (error) throw error.code === '23505' ? new Error('Este día ya se cerró.') : error
     return aCierre(data as FilaCierre)
   }
+
+  /** Llama a la función "usuarios" de Supabase con la sesión de quien está conectado. */
+  private async funcionUsuarios<T>(cuerpo: Record<string, unknown>): Promise<T> {
+    const { data } = await this.db.auth.getSession()
+    const token = data.session?.access_token
+    const r = await fetch(`${this.url}/functions/v1/usuarios`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify(cuerpo),
+    })
+    if (r.status === 404) throw new SinFuncion()
+    const json = await r.json().catch(() => ({})) as T & { error?: string }
+    if (!r.ok) throw new Error(json.error ?? `Error ${r.status} en la función de usuarios.`)
+    return json
+  }
+
+  async estadoAccesos() {
+    // Mientras no se corra la migración 0007 (tabla perfiles), la app sigue como antes, sin clave.
+    const { error } = await this.db.from('perfiles').select('id').limit(1)
+    if (error) {
+      if (error.code === '42P01' || error.code === 'PGRST205' || error.message.includes('perfiles')) return 'sin-configurar' as const
+      throw error
+    }
+    const { hayAdmin } = await this.funcionUsuarios<{ hayAdmin: boolean }>({ accion: 'estado' })
+    return hayAdmin ? 'listo' as const : 'sin-admin' as const
+  }
+
+  private async perfil(id: string): Promise<Usuario | null> {
+    const { data, error } = await this.db.from('perfiles').select('id, usuario, nombre, rol, activo').eq('id', id).maybeSingle()
+    if (error) throw error
+    return data as Usuario | null
+  }
+
+  async sesion() {
+    const { data } = await this.db.auth.getSession()
+    if (!data.session) return null
+    try {
+      const p = await this.perfil(data.session.user.id)
+      return p?.activo ? p : null
+    } catch {
+      return null
+    }
+  }
+
+  async entrar(usuario: string, clave: string) {
+    const { data, error } = await this.db.auth.signInWithPassword({ email: correoDe(usuario), password: clave })
+    if (error) throw new Error(error.message.includes('Invalid login') ? 'Usuario o clave incorrectos.' : error.message)
+    const p = await this.perfil(data.user.id)
+    if (!p?.activo) {
+      await this.db.auth.signOut()
+      throw new Error(p ? 'Este usuario está desactivado. Habla con el administrador.' : 'Este usuario no tiene acceso a la app.')
+    }
+    return p
+  }
+
+  async salir() {
+    await this.db.auth.signOut()
+  }
+
+  async crearAdmin(n: Omit<NuevoUsuario, 'rol'>) {
+    await this.funcionUsuarios({ accion: 'crear-admin', ...n })
+  }
+
+  async usuarios() {
+    return this.funcionUsuarios<Usuario[]>({ accion: 'listar' })
+  }
+
+  async crearUsuario(n: NuevoUsuario) {
+    await this.funcionUsuarios({ accion: 'crear', ...n })
+  }
+
+  async cambiarUsuario(id: string, c: CambioUsuario) {
+    await this.funcionUsuarios({ accion: 'cambiar', id, ...c })
+  }
+
+  async borrarUsuario(id: string) {
+    await this.funcionUsuarios({ accion: 'borrar', id })
+  }
+}
+
+/** La función "usuarios" todavía no está publicada en Supabase. */
+class SinFuncion extends Error {
+  constructor() { super('La función de usuarios no está publicada en Supabase.') }
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { AlmacenLocal } from './almacenLocal'
 import { diaAnterior, hoy, quedaronSinCobrar } from '../domain/calculos'
+import { pantallasDe } from '../domain/accesos'
 
 class MemoriaStorage implements Storage {
   private m = new Map<string, string>()
@@ -115,5 +116,44 @@ describe('diaAnterior', () => {
   it('cruza meses y años', () => {
     expect(diaAnterior('2026-03-01')).toBe('2026-02-28')
     expect(diaAnterior('2027-01-01')).toBe('2026-12-31')
+  })
+})
+
+describe('accesos por usuario en modo demo', () => {
+  it('crea el administrador una sola vez y entra con su clave', async () => {
+    const a = new AlmacenLocal(new MemoriaStorage(), new MemoriaStorage())
+    expect(await a.estadoAccesos()).toBe('sin-admin')
+    await a.crearAdmin({ nombre: 'Carlos', usuario: 'Carlos', clave: '123456' })
+    expect(await a.estadoAccesos()).toBe('listo')
+    await expect(a.crearAdmin({ nombre: 'Otro', usuario: 'otro', clave: '123456' })).rejects.toThrow('ya existe')
+    await expect(a.entrar('carlos', 'mala')).rejects.toThrow('incorrectos')
+    expect(await a.entrar('carlos', '123456')).toMatchObject({ usuario: 'carlos', rol: 'admin' })
+    expect((await a.sesion())?.nombre).toBe('Carlos')
+  })
+
+  it('solo el administrador maneja usuarios, y no se quita el acceso a sí mismo', async () => {
+    const a = new AlmacenLocal(new MemoriaStorage(), new MemoriaStorage())
+    await a.crearAdmin({ nombre: 'Carlos', usuario: 'carlos', clave: '123456' })
+    await a.entrar('carlos', '123456')
+    await a.crearUsuario({ nombre: 'Gerencia', usuario: 'gerencia', clave: 'abcdef', rol: 'gerencia' })
+    await expect(a.crearUsuario({ nombre: 'X', usuario: 'gerencia', clave: 'abcdef', rol: 'caja' })).rejects.toThrow('Ya existe')
+    const [yo, g] = await a.usuarios()
+    await expect(a.cambiarUsuario(yo.id, { activo: false })).rejects.toThrow('a ti mismo')
+    await a.cambiarUsuario(g.id, { activo: false })
+    await a.salir()
+    await expect(a.entrar('gerencia', 'abcdef')).rejects.toThrow('desactivado')
+    await a.entrar('carlos', '123456')
+    await a.cambiarUsuario(g.id, { activo: true, clave: 'nueva1' })
+    await a.entrar('gerencia', 'nueva1')
+    await expect(a.usuarios()).rejects.toThrow('Solo el administrador')
+  })
+})
+
+describe('pantallas por rol', () => {
+  it('cada rol ve solo lo suyo', () => {
+    expect(pantallasDe('admin')).toContain('usuarios')
+    expect(pantallasDe('gerencia')).toEqual(['caja', 'cocina', 'mesero'])
+    expect(pantallasDe('cocina')).toEqual(['cocina'])
+    expect(pantallasDe(null)).not.toContain('usuarios')
   })
 })
