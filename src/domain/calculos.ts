@@ -85,6 +85,16 @@ export function validarJornada(j: Pick<Jornada, 'tasa' | 'precios'>): string | n
 export const hoy = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
+/** Fecha (AAAA-MM-DD) del día anterior. */
+export function diaAnterior(fecha: string) {
+  const [a, m, d] = fecha.split('-').map(Number)
+  return hoy(new Date(a, m - 1, d - 1))
+}
+
+/** Comandas de días anteriores que siguen sin cobrar ni anular. */
+export const quedaronSinCobrar = (comandas: Comanda[], fecha: string) =>
+  comandas.filter(c => c.fecha < fecha && !c.pago && !c.anuladaEn)
+
 export const hora = (iso: string) =>
   new Date(iso).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false })
 

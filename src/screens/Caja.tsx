@@ -21,7 +21,7 @@ export function Caja({ comandas, ultimaJornada, cierreHoy }: Props) {
   const jornada = ultimaJornada?.fecha === hoy() ? ultimaJornada : null
 
   if (!jornada || editando) {
-    return <Apertura key={ultimaJornada?.abiertaEn ?? 'nueva'} anterior={ultimaJornada} alTerminar={() => setEditando(false)} />
+    return <Apertura key={ultimaJornada?.abiertaEn ?? 'nueva'} anterior={ultimaJornada} comandas={comandas} alTerminar={() => setEditando(false)} />
   }
 
   const pestanas = (

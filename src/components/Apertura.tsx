@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { almacen } from '../data'
-import { aDolares, fmtBs, fmtUsd, hoy, leerNumero, validarJornada } from '../domain/calculos'
+import { aDolares, fmtBs, fmtUsd, hoy, leerNumero, quedaronSinCobrar, validarJornada } from '../domain/calculos'
 import { BEBIDAS, INSUMOS } from '../domain/menu'
-import type { BebidaId, InsumoId, Inventario, Jornada, Precios } from '../domain/tipos'
+import type { BebidaId, Comanda, InsumoId, Inventario, Jornada, Precios } from '../domain/tipos'
 import perro from '../assets/iconos/salchicha.png'
 import { IconoEnvase } from './Iconos'
 
@@ -14,8 +14,10 @@ const cantidad = (n: number | undefined) => (n === undefined ? '' : String(n).re
  * inventario que recibe antes de empezar. Los precios se precargan con la
  * última apertura para que solo cambie lo necesario.
  */
-export function Apertura({ anterior, alTerminar }: { anterior: Jornada | null; alTerminar?: () => void }) {
+export function Apertura({ anterior, comandas = [], alTerminar }: { anterior: Jornada | null; comandas?: Comanda[]; alTerminar?: () => void }) {
   const esHoy = anterior?.fecha === hoy()
+  const sobrantes = quedaronSinCobrar(comandas, hoy())
+  const sobranteBs = sobrantes.reduce((s, c) => s + c.totalBs, 0)
   const [tasa, setTasa] = useState(texto(anterior?.tasa))
   const [perroBs, setPerroBs] = useState(texto(anterior?.precios.perro))
   const [envaseBs, setEnvaseBs] = useState(texto(anterior?.precios.envase))
@@ -71,6 +73,14 @@ export function Apertura({ anterior, alTerminar }: { anterior: Jornada | null; a
         {esHoy ? 'Cambiar la apertura de hoy' : 'Apertura del día'}
         <small>{esHoy ? 'Las comandas ya enviadas conservan su precio.' : 'Antes de tomar pedidos, confirma la tasa, los precios y el inventario que recibes.'}</small>
       </h1>
+
+      {sobrantes.length > 0 && (
+        <p className="alerta">
+          {sobrantes.length === 1 ? 'Quedó 1 comanda' : `Quedaron ${sobrantes.length} comandas`} sin cobrar de días anteriores
+          (Bs {fmtBs(sobranteBs)}: {sobrantes.map(c => c.nombre || `#${c.numero}`).join(', ')}).
+          Al abrir el día pasan a crédito en el reporte de su día y salen de la pantalla.
+        </p>
+      )}
 
       <section className="panel tasa">
         <label className="lbl" htmlFor="tasa-dia">Tasa BCV del día</label>

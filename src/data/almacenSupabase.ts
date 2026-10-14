@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { aDolares, hoy, redondear, sumarAdicional, totalBs } from '../domain/calculos'
+import { aDolares, diaAnterior, hoy, redondear, sumarAdicional, totalBs } from '../domain/calculos'
 import type { Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda, Pedido, Precios, ResumenDia } from '../domain/tipos'
 import type { Almacen } from './almacen'
 
@@ -126,6 +126,7 @@ export class AlmacenSupabase implements Almacen {
   }
 
   async abrirJornada(j: Omit<Jornada, 'abiertaEn'>) {
+    await this.limpiarHasta(diaAnterior(j.fecha))
     const { data, error } = await this.db
       .from('jornadas')
       .upsert({ fecha: j.fecha, tasa: j.tasa, precios: j.precios, inventario: j.inventario, abierta_en: new Date().toISOString() })
@@ -208,6 +209,26 @@ export class AlmacenSupabase implements Almacen {
     if (error) throw error
   }
 
+  async limpiarHasta(fecha: string) {
+    const ahora = new Date().toISOString()
+    const { data, error } = await this.db
+      .from('comandas')
+      .update({ pago_metodo: 'credito', pago_referencia: null, pago_moneda: null, cobrada_en: ahora, estado: 'entregada', entregada_en: ahora })
+      .lte('fecha', fecha)
+      .is('cobrada_en', null)
+      .is('anulada_en', null)
+      .select('id')
+    if (error) throw error
+    const { error: e2 } = await this.db
+      .from('comandas')
+      .update({ estado: 'entregada', entregada_en: ahora })
+      .lte('fecha', fecha)
+      .neq('estado', 'entregada')
+      .is('anulada_en', null)
+    if (e2) throw e2
+    return data?.length ?? 0
+  }
+
   async cobrar(id: string, metodo: MetodoPago, referencia: string | null, moneda: Moneda | null) {
     const { error } = await this.db
       .from('comandas')
@@ -237,6 +258,8 @@ export class AlmacenSupabase implements Almacen {
   }
 
   async cerrarDia(c: Omit<Cierre, 'cerradoEn'>) {
+    if (await this.cierre(c.fecha)) throw new Error('Este día ya se cerró.')
+    await this.limpiarHasta(c.fecha)
     const { data, error } = await this.db
       .from('cierres')
       .insert({

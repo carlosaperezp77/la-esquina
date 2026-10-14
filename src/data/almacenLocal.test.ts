@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { AlmacenLocal } from './almacenLocal'
+import { diaAnterior, hoy, quedaronSinCobrar } from '../domain/calculos'
 
 class MemoriaStorage implements Storage {
   private m = new Map<string, string>()
@@ -75,5 +76,44 @@ describe('adicionales en modo demo', () => {
     expect(n.adicionales).toHaveLength(1)
     await a.cobrar(c.id, 'efectivo', null, 'bs')
     await expect(a.agregar(c.id, { perros: [], bebidas: { agua: 1 }, envases: 0, observaciones: '' }, jornada)).rejects.toThrow(/cobró/)
+  })
+})
+
+describe('fin de la jornada', () => {
+  const manana = () => { const d = new Date(); d.setDate(d.getDate() + 1); return hoy(d) }
+
+  it('al cerrar caja saca de cocina todas las comandas del día', async () => {
+    const a = new AlmacenLocal(new MemoriaStorage())
+    const c = await a.crear(nueva, jornada)
+    await a.cobrar(c.id, 'efectivo', null, 'bs')
+    await a.cerrarDia({ fecha: hoy(), fondoBs: 0, fondoUsd: 0, contadoBs: 0, contadoUsd: 0, observaciones: '', inventarioFinal: {}, resumen: null as never })
+    const [g] = await a.listar()
+    expect(g.estado).toBe('entregada')
+    expect(g.pago).toMatchObject({ metodo: 'efectivo' })
+  })
+
+  it('al abrir el día siguiente pasa a crédito lo que quedó sin cobrar', async () => {
+    const a = new AlmacenLocal(new MemoriaStorage())
+    const c1 = await a.crear(nueva, jornada)
+    const c2 = await a.crear(nueva, jornada)
+    const c3 = await a.crear(nueva, jornada)
+    await a.cobrar(c2.id, 'movil', '1', null)
+    await a.anular(c3.id)
+    await a.abrirJornada({ fecha: hoy(), tasa: 200, precios: jornada.precios, inventario: {} })
+    expect((await a.listar()).find(c => c.id === c1.id)!.pago).toBeNull()
+
+    await a.abrirJornada({ fecha: manana(), tasa: 200, precios: jornada.precios, inventario: {} })
+    const l = await a.listar()
+    expect(l.find(c => c.id === c1.id)).toMatchObject({ estado: 'entregada', pago: { metodo: 'credito' } })
+    expect(l.find(c => c.id === c2.id)!.pago).toMatchObject({ metodo: 'movil' })
+    expect(l.find(c => c.id === c3.id)).toMatchObject({ estado: 'nueva', pago: null })
+    expect(quedaronSinCobrar(l, manana())).toHaveLength(0)
+  })
+})
+
+describe('diaAnterior', () => {
+  it('cruza meses y años', () => {
+    expect(diaAnterior('2026-03-01')).toBe('2026-02-28')
+    expect(diaAnterior('2027-01-01')).toBe('2026-12-31')
   })
 })

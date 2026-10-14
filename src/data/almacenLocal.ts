@@ -1,4 +1,4 @@
-import { aDolares, hoy, sumarAdicional, totalBs } from '../domain/calculos'
+import { aDolares, diaAnterior, hoy, sumarAdicional, totalBs } from '../domain/calculos'
 import type { Cierre, Comanda, EstadoComanda, Jornada, MetodoPago, Moneda, NuevaComanda, Pedido } from '../domain/tipos'
 import type { Almacen } from './almacen'
 
@@ -46,6 +46,7 @@ export class AlmacenLocal implements Almacen {
   }
 
   async abrirJornada(j: Omit<Jornada, 'abiertaEn'>) {
+    await this.limpiarHasta(diaAnterior(j.fecha))
     const nueva: Jornada = { ...j, abiertaEn: new Date().toISOString() }
     const js = this.leerDe<Jornada>(CLAVE_JORNADAS).filter(x => x.fecha !== j.fecha)
     this.storage.setItem(CLAVE_JORNADAS, JSON.stringify([...js, nueva]))
@@ -123,6 +124,24 @@ export class AlmacenLocal implements Almacen {
     this.guardar(this.leer().map(c => (c.id === id && !c.pago ? { ...c, anuladaEn } : c)))
   }
 
+  async limpiarHasta(fecha: string) {
+    const ahora = new Date().toISOString()
+    let n = 0
+    this.guardar(this.leer().map(c => {
+      if (c.fecha > fecha || c.anuladaEn) return c
+      const sinCobrar = !c.pago
+      if (sinCobrar) n++
+      if (!sinCobrar && c.estado === 'entregada') return c
+      return {
+        ...c,
+        estado: 'entregada',
+        entregadaEn: c.entregadaEn ?? ahora,
+        pago: c.pago ?? { metodo: 'credito', referencia: null, moneda: null, cobradaEn: ahora },
+      }
+    }))
+    return n
+  }
+
   async cobrar(id: string, metodo: MetodoPago, referencia: string | null, moneda: Moneda | null) {
     const cobradaEn = new Date().toISOString()
     this.guardar(this.leer().map(c => c.id !== id ? c : { ...c, pago: { metodo, referencia, moneda, cobradaEn } }))
@@ -139,6 +158,7 @@ export class AlmacenLocal implements Almacen {
   async cerrarDia(c: Omit<Cierre, 'cerradoEn'>) {
     const cs = this.leerDe<Cierre>(CLAVE_CIERRES)
     if (cs.some(x => x.fecha === c.fecha)) throw new Error('Este día ya se cerró.')
+    await this.limpiarHasta(c.fecha)
     const nuevo: Cierre = { ...c, cerradoEn: new Date().toISOString() }
     this.storage.setItem(CLAVE_CIERRES, JSON.stringify([...cs, nuevo]))
     this.avisar(true)

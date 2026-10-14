@@ -19,6 +19,11 @@ export interface Almacen {
   agregar(id: string, extra: Pedido, jornada: Jornada): Promise<Comanda>
   /** Anula una comanda sin cobrar: sale de cocina y no cuenta como venta. */
   anular(id: string): Promise<void>
+  /**
+   * Deja limpias las comandas hasta esa fecha (incluida): las que siguen sin
+   * cobrar pasan a crédito y todas salen de cocina. Devuelve cuántas pasó a crédito.
+   */
+  limpiarHasta(fecha: string): Promise<number>
   /** `moneda` solo aplica al efectivo. */
   cobrar(id: string, metodo: MetodoPago, referencia: string | null, moneda: Moneda | null): Promise<void>
   /** Clave pública del servidor de avisos, o null si no hay (modo demo). */
