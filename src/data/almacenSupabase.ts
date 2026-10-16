@@ -99,9 +99,12 @@ export class AlmacenSupabase implements Almacen {
   readonly modo = 'en-linea' as const
   private db: SupabaseClient
   private url: string
+  /** Clave pública: Supabase la pide también para llamar a las funciones. */
+  private clave: string
 
   constructor(url: string, clave: string) {
     this.url = url
+    this.clave = clave
     this.db = createClient(url, clave)
   }
 
@@ -239,7 +242,7 @@ export class AlmacenSupabase implements Almacen {
   }
 
   async clavePush() {
-    const r = await fetch(`${this.url}/functions/v1/avisar-comanda`)
+    const r = await fetch(`${this.url}/functions/v1/avisar-comanda`, { headers: { apikey: this.clave } })
     if (!r.ok) throw new Error('La función de avisos no está publicada en Supabase.')
     const { publica } = await r.json() as { publica: string }
     return publica
@@ -285,12 +288,12 @@ export class AlmacenSupabase implements Almacen {
     const token = data.session?.access_token
     const r = await fetch(`${this.url}/functions/v1/usuarios`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: { 'Content-Type': 'application/json', apikey: this.clave, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify(cuerpo),
     })
     if (r.status === 404) throw new SinFuncion()
-    const json = await r.json().catch(() => ({})) as T & { error?: string }
-    if (!r.ok) throw new Error(json.error ?? `Error ${r.status} en la función de usuarios.`)
+    const json = await r.json().catch(() => ({})) as T & { error?: string; message?: string; msg?: string }
+    if (!r.ok) throw new Error(json.error ?? `Error ${r.status} en la función de usuarios${json.message ?? json.msg ? `: ${json.message ?? json.msg}` : ''}.`)
     return json
   }
 
