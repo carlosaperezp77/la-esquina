@@ -304,7 +304,10 @@ export class AlmacenSupabase implements Almacen {
       if (error.code === '42P01' || error.code === 'PGRST205' || error.message.includes('perfiles')) return 'sin-configurar' as const
       throw error
     }
-    const { hayAdmin } = await this.funcionUsuarios<{ hayAdmin: boolean }>({ accion: 'estado' })
+    const { hayAdmin } = await this.funcionUsuarios<{ hayAdmin?: boolean }>({ accion: 'estado' })
+    if (typeof hayAdmin !== 'boolean') {
+      throw new Error('La función "usuarios" de Supabase no tiene el código de la app. Pega el archivo usuarios/index.ts en su pestaña Code y publícala de nuevo.')
+    }
     return hayAdmin ? 'listo' as const : 'sin-admin' as const
   }
 
