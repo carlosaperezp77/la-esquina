@@ -1,0 +1,145 @@
+/* Hoja "Control diario de caja": copia del formato impreso de La Esquina. Siempre en claro, como el papel. */
+.cd-hoja {
+  --cd-negro: #141414; --cd-amarillo: #f6d313; --cd-amarillo-s: #fcefb0; --cd-verde: #d4ebcd; --cd-azul: #d3e3f3;
+  --cd-rosa: #f7d6d4; --cd-durazno: #f8dcc7; --cd-gris: #e8e8e6; --cd-linea: #8f8f8f; --cd-tinta: #1a1a1a;
+  color-scheme: light; background: #fff; color: var(--cd-tinta); font-family: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  width: 100%; max-width: 980px; margin: 0 auto; padding: 22px 22px 0; border-radius: 4px; box-shadow: 0 8px 30px #0007;
+  display: flex; flex-direction: column; gap: 12px; font-size: 14px; line-height: 1.2;
+}
+.cd-hoja img { display: block; }
+.cd-corazon { width: .9em; height: .9em; color: var(--cd-amarillo); display: inline-block; vertical-align: -.08em; }
+
+/* Encabezado negro */
+.cd-banner { background: var(--cd-negro); border-radius: 6px; padding: 12px 18px; display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 18px; color: #fff; }
+.cd-logo { display: flex; flex-direction: column; align-items: center; }
+.cd-marca { font-family: "Bangers", Impact, sans-serif; font-size: 50px; letter-spacing: .02em; line-height: .9; text-transform: uppercase; color: #fff; }
+.cd-a { display: inline-block; transform: rotate(-4deg); }
+.cd-trazo { width: 100%; height: 7px; background: var(--cd-amarillo); border-radius: 50% / 100%; transform: rotate(-2deg); margin: 2px 0 4px; }
+.cd-sub { font-size: 17px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.cd-lema { font-family: "Bangers", Impact, sans-serif; font-size: 30px; line-height: 1; text-transform: uppercase; display: flex; flex-direction: column; justify-self: center; letter-spacing: .03em; }
+.cd-lema b { color: var(--cd-amarillo); font-weight: 400; }
+.cd-perro { width: 118px; height: auto; border-radius: 4px; }
+.cd-derecha { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; text-align: right; }
+.cd-momento { font-size: 13px; font-weight: 700; text-transform: uppercase; line-height: 1.1; }
+.cd-sabores { background: var(--cd-amarillo); color: var(--cd-negro); font-family: "Bangers", Impact, sans-serif; font-size: 18px; line-height: .95; text-transform: uppercase; padding: 5px 10px; border-radius: 3px; text-align: center; }
+.cd-sabores .cd-corazon { color: var(--cd-negro); }
+
+/* Fecha, precios e inventario */
+.cd-arriba { display: flex; flex-direction: column; gap: 10px; }
+.cd-izq { display: flex; flex-direction: column; gap: 10px; }
+.cd-fecha { display: flex; align-items: baseline; gap: 6px; font-size: 18px; flex-wrap: wrap; }
+.cd-fecha b { text-transform: uppercase; }
+.cd-linea { border-bottom: 1.5px solid var(--cd-tinta); min-width: 34px; text-align: center; font-weight: 700; }
+.cd-tasa { margin-left: auto; font-size: 13px; color: #555; }
+.cd-caja { border: 1px solid #c9c9c9; border-radius: 6px; overflow: hidden; background: #fff; }
+.cd-caja h3 { margin: 0; text-align: center; font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 4px 6px; }
+.cd-precios h3 { background: var(--cd-amarillo); }
+.cd-precios { background: #fdf8dc; }
+.cd-precios-fila { display: grid; grid-template-columns: repeat(auto-fit, minmax(122px, 1fr)); gap: 6px; padding: 8px; }
+.cd-precios-fila > div { display: grid; grid-template-columns: 38px 1fr; grid-template-rows: auto auto; gap: 2px 4px; align-items: center; }
+.cd-precios-fila img, .cd-precios-fila svg { grid-row: span 2; width: 38px; height: 38px; object-fit: contain; }
+.cd-precios-fila small { font-size: 10.5px; font-weight: 700; text-transform: uppercase; line-height: 1.05; }
+.cd-precios-fila span { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.cd-precios-fila u, .cd-res-pago u, .cd-facturado u { text-decoration: none; border-bottom: 1.2px solid var(--cd-tinta); font-weight: 700; padding: 0 3px; font-variant-numeric: tabular-nums; }
+.cd-inventario h3 { background: var(--cd-verde); }
+.cd-inventario table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.cd-inventario th { font-size: 10.5px; text-transform: uppercase; background: #f1f7ef; padding: 3px 4px; border-bottom: 1px solid #c9c9c9; }
+.cd-inventario td { padding: 2px 5px; border-bottom: 1px solid #e3e3e3; height: 19px; }
+.cd-inventario td:nth-child(6) { border-right: 1.5px solid #9a9a9a; }
+.cd-inventario th:nth-child(6) { border-right: 1.5px solid #9a9a9a; }
+.cd-inventario th { line-height: 1.05; }
+.cd-auto { background: #f4f9f2; color: #3c5a34; }
+.cd-dif.falta { color: #b23b2e; font-weight: 700; }
+.cd-dif.sobra { color: #2d5f96; font-weight: 700; }
+.cd-nota-inv { margin: 0; padding: 4px 8px; font-size: 11px; color: #666; border-top: 1px solid #e3e3e3; }
+.cd-num { text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* Título */
+.cd-titulo { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cd-titulo h2 { margin: 0; font-family: "Anton", Impact, sans-serif; font-weight: 400; font-size: 38px; text-transform: uppercase; letter-spacing: .01em; background: var(--cd-amarillo); padding: 2px 16px 0; border-radius: 3px; line-height: 1.15; }
+.cd-mano { font-family: "Caveat", cursive; font-size: 22px; text-align: right; line-height: .95; transform: rotate(-4deg); }
+
+/* Tabla principal */
+.cd-tabla-wrap { overflow-x: auto; }
+.cd-tabla { width: 100%; min-width: 820px; border-collapse: collapse; font-size: 13px; }
+.cd-tabla th { font-size: 10.5px; font-weight: 700; text-transform: uppercase; line-height: 1.05; padding: 4px 3px; border: 1px solid #b5b5b5; vertical-align: middle; text-align: center; }
+.cd-tabla th img, .cd-tabla th svg { width: 26px; height: 22px; object-fit: contain; margin: 3px auto 0; display: block; }
+.cd-tabla th b { display: block; font-size: 16px; margin-top: 2px; }
+.cd-h-num { background: var(--cd-negro); color: #fff; width: 58px; font-size: 12px !important; }
+.cd-h-nombre { background: var(--cd-gris); font-size: 12px !important; }
+.cd-h-perro { background: var(--cd-durazno); width: 62px; }
+.cd-h-bebidas { background: var(--cd-verde); }
+.cd-h-envase { background: var(--cd-amarillo-s); width: 64px; }
+.cd-h-total { background: var(--cd-gris); width: 86px; font-size: 12px !important; }
+.cd-h-pago { background: var(--cd-verde); }
+.cd-sub-h { font-size: 9.5px !important; width: 46px; }
+.cd-h-cobrado { background: var(--cd-gris); width: 56px; }
+.cd-h-mesa { background: var(--cd-rosa); width: 52px; }
+.cd-tabla td { border: 1px solid #c3c3c3; height: 21px; padding: 1px 4px; }
+.cd-num-com { text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; background: #f5f5f4; }
+.cd-nombre { font-weight: 600; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cd-total { text-align: right; }
+.cd-check { text-align: center; }
+.cd-casilla { display: inline-block; width: 11px; height: 11px; border: 1.2px solid #444; border-radius: 2px; vertical-align: middle; position: relative; }
+.cd-casilla.si::after { content: ""; position: absolute; left: 2px; top: -3px; width: 5px; height: 10px; border-right: 2.5px solid var(--cd-tinta); border-bottom: 2.5px solid var(--cd-tinta); transform: rotate(40deg); }
+.cd-anulada td { color: #9a9a9a; text-decoration: line-through; }
+.cd-anulada em { color: #c9403a; font-style: normal; font-weight: 700; text-decoration: none; display: inline-block; }
+
+/* Resúmenes */
+.cd-abajo { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: stretch; }
+.cd-abajo ul { list-style: none; margin: 0; padding: 8px 10px; display: flex; flex-direction: column; gap: 5px; }
+.cd-res-ventas h3 { background: var(--cd-verde); }
+.cd-res-ventas li { display: grid; grid-template-columns: 26px 1fr 44px; align-items: center; gap: 6px; font-size: 12.5px; }
+.cd-res-ventas li img, .cd-res-ventas li svg { width: 26px; height: 22px; object-fit: contain; }
+.cd-res-ventas li.sin-ic { grid-template-columns: 1fr 44px; padding-left: 4px; }
+.cd-res-ventas b { border: 1.2px solid #777; border-radius: 3px; text-align: center; font-size: 14px; padding: 1px 0; font-variant-numeric: tabular-nums; }
+.cd-res-pago h3 { background: var(--cd-azul); }
+.cd-res-pago li { display: flex; justify-content: space-between; gap: 6px; font-size: 14px; }
+.cd-bs { font-variant-numeric: tabular-nums; }
+.cd-facturado { margin: 4px 10px 8px; background: var(--cd-amarillo-s); border-radius: 4px; padding: 6px 8px; font-size: 14.5px; font-weight: 700; text-transform: uppercase; display: flex; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
+.cd-nota { margin: 0 10px 6px; font-size: 11.5px; color: #555; }
+.cd-pend { color: #b23b2e; font-weight: 700; }
+.cd-obs h3 { background: var(--cd-rosa); }
+.cd-obs p { margin: 0; padding: 8px 12px; min-height: 130px; font-size: 14px; white-space: pre-wrap;
+  background: repeating-linear-gradient(to bottom, transparent 0 21px, #cfcfcf 21px 22px); line-height: 22px; }
+
+/* Pie */
+.cd-pie { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 6px 0 10px; }
+.cd-gracias { display: flex; align-items: center; gap: 10px; font-family: "Permanent Marker", cursive; font-size: 17px; text-transform: uppercase; line-height: 1.05; transform: rotate(-2deg); }
+.cd-gracias svg { width: 48px; height: 30px; fill: var(--cd-negro); }
+.cd-pie-marca { background: var(--cd-negro); color: #fff; display: flex; align-items: center; gap: 14px; padding: 8px 22px; transform: skew(-8deg); border-radius: 3px; }
+.cd-pie-marca .cd-marca { font-size: 36px; }
+.cd-regresa { font-family: "Caveat", cursive; font-size: 19px; line-height: .95; }
+.cd-franjas { margin: 0 -22px; display: flex; flex-direction: column; }
+.cd-franjas span:first-child { height: 7px; background: var(--cd-amarillo); }
+.cd-franjas span:last-child { height: 10px; background: var(--cd-negro); border-radius: 0 0 4px 4px; }
+
+@media screen and (max-width: 760px) {
+  .cd-hoja { padding: 12px 12px 0; }
+  .cd-banner { grid-template-columns: 1fr auto; }
+  .cd-lema, .cd-derecha { display: none; }
+  .cd-abajo { grid-template-columns: 1fr; }
+  .cd-inventario { overflow-x: auto; }
+  .cd-inventario table { min-width: 720px; }
+  .cd-titulo h2 { font-size: 26px; }
+  .cd-pie { flex-direction: column; }
+  .cd-franjas { margin: 0 -12px; }
+}
+
+@media print {
+  @page { size: letter; margin: 10mm; }
+  .cd-hoja { box-shadow: none; max-width: none; width: 980px; padding: 0; zoom: .66; gap: 8px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .cd-tabla td { height: 17px; padding: 0 4px; }
+  .cd-obs p { min-height: 90px; }
+  .cd-tabla { min-width: 0; }
+  .cd-tabla tr { break-inside: avoid; }
+  .cd-franjas { margin: 0; }
+}
+.cd-beb { position: relative; display: block; }
+.cd-beb i { position: absolute; right: -4px; bottom: -2px; font-style: normal; font-size: 9px; font-weight: 700; line-height: 1; background: var(--cd-negro); color: #fff; border-radius: 3px; padding: 1px 2px; }
+.cd-precios-fila .cd-beb { grid-row: span 2; }
+.cd-tabla th .cd-beb { width: 26px; margin: 3px auto 0; }
+.cd-tabla { min-width: 900px; }
+.cd-tabla .cd-sub-h { width: 40px; padding: 3px 1px; }
+.cd-inventario td:first-child, .cd-inventario td:nth-child(4) { white-space: nowrap; }
+.cd-inventario .unidad { opacity: .7; }
