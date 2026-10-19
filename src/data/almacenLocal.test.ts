@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { AlmacenLocal } from './almacenLocal'
 import { diaAnterior, hoy, quedaronSinCobrar } from '../domain/calculos'
-import { pantallasDe } from '../domain/accesos'
+import { pantallasDe, problemaUsuario } from '../domain/accesos'
 
 class MemoriaStorage implements Storage {
   private m = new Map<string, string>()
@@ -155,5 +155,15 @@ describe('pantallas por rol', () => {
     expect(pantallasDe('gerencia')).toEqual(['caja', 'cocina', 'mesero'])
     expect(pantallasDe('cocina')).toEqual(['cocina'])
     expect(pantallasDe(null)).not.toContain('usuarios')
+  })
+})
+
+describe('mensajes del usuario', () => {
+  it('dice exactamente qué sobra', () => {
+    expect(problemaUsuario('carlosaperezp@gmail.com')).toContain('quita la @')
+    expect(problemaUsuario('carlos p')).toContain('espacios')
+    expect(problemaUsuario('maría')).toBe('El usuario no puede tener "í". Usa solo letras sin acento, números, punto o guion.')
+    expect(problemaUsuario('ab')).toContain('al menos 3')
+    expect(problemaUsuario('Carlos.P')).toBeNull()
   })
 })

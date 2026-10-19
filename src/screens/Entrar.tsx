@@ -84,7 +84,7 @@ export function CrearAdmin({ alTerminar }: { alTerminar: (u: Usuario) => void })
       <section className="panel">
         {campo('nombre', 'Nombre', nombre, setNombre, 'text', 'name')}
         {campo('usuario', 'Usuario', usuario, setUsuario, 'text', 'username')}
-        <p className="note">Letras y números, sin espacios ni acentos. Ejemplo: carlos</p>
+        <p className="note">Un nombre corto, no el correo. Letras y números, sin espacios, acentos ni @. Ejemplo: carlos</p>
         {campo('clave', 'Clave', clave, setClave, 'password', 'new-password')}
         {campo('repetir', 'Repite la clave', repetir, setRepetir, 'password', 'new-password')}
       </section>
