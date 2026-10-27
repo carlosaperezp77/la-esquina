@@ -152,8 +152,11 @@ export class AlmacenLocal implements Almacen {
   }
 
   async cobrar(id: string, metodo: MetodoPago, referencia: string | null, moneda: Moneda | null) {
+    const cs = this.leer()
+    const c = cs.find(x => x.id === id)
+    if (!c || c.pago || c.anuladaEn) throw new Error('Esa comanda ya se cobró o se anuló en otro equipo.')
     const cobradaEn = new Date().toISOString()
-    this.guardar(this.leer().map(c => c.id !== id ? c : { ...c, pago: { metodo, referencia, moneda, cobradaEn } }))
+    this.guardar(cs.map(x => x.id !== id ? x : { ...x, pago: { metodo, referencia, moneda, cobradaEn } }))
   }
 
   // En modo demo no hay servidor de avisos; avisa la pantalla abierta.

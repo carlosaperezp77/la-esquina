@@ -44,6 +44,18 @@ describe('almacén en modo demo', () => {
     expect(g.pago).toMatchObject({ metodo: 'movil', referencia: '4521' })
     expect(avisos).toBe(3)
   })
+  it('no cobra dos veces ni cobra una anulada', async () => {
+    const a = new AlmacenLocal(new MemoriaStorage())
+    const c1 = await a.crear(nueva, jornada)
+    const c2 = await a.crear(nueva, jornada)
+    await a.cobrar(c1.id, 'movil', '4521', null)
+    await expect(a.cobrar(c1.id, 'efectivo', null, 'bs')).rejects.toThrow('ya se cobró')
+    await a.anular(c2.id)
+    await expect(a.cobrar(c2.id, 'tarjeta', null, null)).rejects.toThrow('ya se cobró o se anuló')
+    const [g] = await a.listar()
+    expect(g.pago).toMatchObject({ metodo: 'movil', referencia: '4521' })
+  })
+
   it('guarda la apertura del día y devuelve la más reciente', async () => {
     const a = new AlmacenLocal(new MemoriaStorage())
     expect(await a.ultimaJornada()).toBeNull()

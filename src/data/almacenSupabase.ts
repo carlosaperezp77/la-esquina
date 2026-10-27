@@ -183,25 +183,32 @@ export class AlmacenSupabase implements Almacen {
   }
 
   async agregar(id: string, extra: Pedido, jornada: Jornada) {
-    const { data: fila, error: e1 } = await this.db.from('comandas').select('*').eq('id', id).single()
-    if (e1) throw e1
-    const c = aComanda(fila as Fila)
-    if (c.pago || c.anuladaEn) throw new Error('Esa comanda ya se cobró o se anuló.')
-    const n = sumarAdicional(c, extra, jornada.precios)
-    // Solo si sigue sin cobrar: si alguien la cobró mientras tanto, no se toca.
-    const { data, error } = await this.db
-      .from('comandas')
-      .update({
-        perros: n.perros, bebidas: n.bebidas, envases: n.envases, total_bs: n.totalBs, total_usd: n.totalUsd,
-        estado: n.estado, lista_en: null, entregada_en: null, adicionales: n.adicionales,
-      })
-      .eq('id', id)
-      .is('cobrada_en', null)
-      .is('anulada_en', null)
-      .select()
-    if (error) throw error
-    if (!data?.length) throw new Error('Esa comanda ya se cobró o se anuló.')
-    return aComanda(data[0] as Fila)
+    // Si dos personas agregan a la misma cuenta a la vez, la segunda vuelve a
+    // leer la comanda en vez de borrar lo que agregó la primera.
+    for (let intento = 0; intento < 3; intento++) {
+      const { data: fila, error: e1 } = await this.db.from('comandas').select('*').eq('id', id).single()
+      if (e1) throw e1
+      const c = aComanda(fila as Fila)
+      if (c.pago || c.anuladaEn) throw new Error('Esa comanda ya se cobró o se anuló.')
+      const n = sumarAdicional(c, extra, jornada.precios)
+      // Solo si sigue sin cobrar y nadie la cambió mientras tanto.
+      const antes = (fila as Fila).total_bs
+      let cambio = this.db
+        .from('comandas')
+        .update({
+          perros: n.perros, bebidas: n.bebidas, envases: n.envases, observaciones: n.observaciones,
+          total_bs: n.totalBs, total_usd: n.totalUsd,
+          estado: n.estado, lista_en: null, entregada_en: null, adicionales: n.adicionales,
+        })
+        .eq('id', id)
+        .is('cobrada_en', null)
+        .is('anulada_en', null)
+      cambio = antes == null ? cambio.is('total_bs', null) : cambio.eq('total_bs', antes)
+      const { data, error } = await cambio.select()
+      if (error) throw error
+      if (data?.length) return aComanda(data[0] as Fila)
+    }
+    throw new Error('La cuenta cambió mientras agregabas o ya se cobró. Revísala e intenta de nuevo.')
   }
 
   async anular(id: string) {
@@ -234,11 +241,15 @@ export class AlmacenSupabase implements Almacen {
   }
 
   async cobrar(id: string, metodo: MetodoPago, referencia: string | null, moneda: Moneda | null) {
-    const { error } = await this.db
+    const { data, error } = await this.db
       .from('comandas')
       .update({ pago_metodo: metodo, pago_referencia: referencia, pago_moneda: moneda, cobrada_en: new Date().toISOString() })
       .eq('id', id)
+      .is('cobrada_en', null)
+      .is('anulada_en', null)
+      .select('id')
     if (error) throw error
+    if (!data?.length) throw new Error('Esa comanda ya se cobró o se anuló en otro equipo.')
   }
 
   async clavePush() {

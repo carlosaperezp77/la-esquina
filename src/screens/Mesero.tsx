@@ -28,9 +28,15 @@ export function Mesero({ comandas, ultimaJornada, cierreHoy }: Props) {
     if (!nuevas.length) return
     setAviso(`Lista para servir: Nº ${nuevas.map(c => fmtNumero(c.numero)).join(', ')}`)
     navigator.vibrate?.([200, 100, 200])
+  }, [listas])
+
+  // El aviso se quita solo. Va aparte porque el efecto de arriba corre en
+  // cada actualización y cancelaría el temporizador.
+  useEffect(() => {
+    if (!aviso) return
     const t = setTimeout(() => setAviso(null), 6000)
     return () => clearTimeout(t)
-  }, [listas])
+  }, [aviso])
 
   return (
     <div className="wrap">

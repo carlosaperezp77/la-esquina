@@ -131,12 +131,22 @@ export function useAvisosNuevas(comandas: Comanda[], rol: 'cocina' | 'mesero') {
   }, [conServidor, rol])
 
   // Cualquier toque en la pantalla sirve para activar el sonido, así no hay
-  // que volver a tocar el botón cada vez que se recarga la app.
+  // que volver a tocar el botón cada vez que se recarga la app. El botón se
+  // quita después del toque: si se quitara al apoyar el dedo, la pantalla se
+  // correría y el toque caería en otro lugar (por ejemplo, no en "Empezar").
   useEffect(() => {
-    const alTocar = () => activarSonido()
+    const alTocar = () => {
+      audio.current ??= new AudioContext()
+      void audio.current.resume()
+    }
+    const alSoltar = () => { setTimeout(() => setActivo(true), 0) }
     document.addEventListener('pointerdown', alTocar)
-    return () => document.removeEventListener('pointerdown', alTocar)
-  }, [activarSonido])
+    document.addEventListener('click', alSoltar)
+    return () => {
+      document.removeEventListener('pointerdown', alTocar)
+      document.removeEventListener('click', alSoltar)
+    }
+  }, [])
 
   useEffect(() => {
     const claves = new Set(nuevas.map(clave))
@@ -149,9 +159,15 @@ export function useAvisosNuevas(comandas: Comanda[], rol: 'cocina' | 'mesero') {
     navigator.vibrate?.(VIBRACION)
     // Con avisos del servidor, la notificación ya la muestra el teléfono.
     if (!push) void notificar(texto)
+  }, [nuevas, push])
+
+  // El aviso se quita solo. Va aparte porque el efecto de arriba corre en
+  // cada actualización y cancelaría el temporizador.
+  useEffect(() => {
+    if (!aviso) return
     const t = setTimeout(() => setAviso(null), 10000)
     return () => clearTimeout(t)
-  }, [nuevas, push])
+  }, [aviso])
 
   const faltaPermiso = typeof Notification !== 'undefined' && Notification.permission === 'default'
   const faltaPush = conServidor && !push && pushDisponible()
