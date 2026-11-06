@@ -4,7 +4,7 @@ import { aDolares, fmtBs, fmtUsd, hoy, leerNumero, quedaronSinCobrar, validarJor
 import { BEBIDAS, INSUMOS } from '../domain/menu'
 import type { BebidaId, Comanda, InsumoId, Inventario, Jornada, Precios } from '../domain/tipos'
 import perro from '../assets/iconos/salchicha.png'
-import { IconoEnvase } from './Iconos'
+import { IconoCarne, IconoEnvase } from './Iconos'
 
 const texto = (n: number | undefined) => (n ? fmtBs(n) : '')
 const cantidad = (n: number | undefined) => (n === undefined ? '' : String(n).replace('.', ','))
@@ -20,6 +20,7 @@ export function Apertura({ anterior, comandas = [], alTerminar }: { anterior: Jo
   const sobranteBs = sobrantes.reduce((s, c) => s + c.totalBs, 0)
   const [tasa, setTasa] = useState(texto(anterior?.tasa))
   const [perroBs, setPerroBs] = useState(texto(anterior?.precios.perro))
+  const [carneBs, setCarneBs] = useState(texto(anterior?.precios.perroCarne))
   const [envaseBs, setEnvaseBs] = useState(texto(anterior?.precios.envase))
   const [bebidas, setBebidas] = useState<Record<BebidaId, string>>(() =>
     Object.fromEntries(BEBIDAS.map(b => [b.id, texto(anterior?.precios.bebidas?.[b.id])])) as Record<BebidaId, string>)
@@ -32,6 +33,7 @@ export function Apertura({ anterior, comandas = [], alTerminar }: { anterior: Jo
   const t = leerNumero(tasa)
   const precios: Precios = {
     perro: leerNumero(perroBs),
+    perroCarne: leerNumero(carneBs),
     bebidas: Object.fromEntries(BEBIDAS.map(b => [b.id, leerNumero(bebidas[b.id])])) as Record<BebidaId, number>,
     envase: leerNumero(envaseBs),
   }
@@ -96,6 +98,7 @@ export function Apertura({ anterior, comandas = [], alTerminar }: { anterior: Jo
         <span className="lbl">Precios del día</span>
         <div className="precios">
           {fila('perro', 'Perro caliente', <img src={perro} alt="" />, perroBs, setPerroBs)}
+          {fila('perro-carne', 'Perro con carne', <IconoCarne />, carneBs, setCarneBs)}
           {BEBIDAS.map(b => fila(b.id, b.nombre, <><img src={b.icono} alt="" className={b.foto ? 'foto' : undefined} />{b.tam && <span className="tam">{b.tam}</span>}</>, bebidas[b.id], v => setBebidas(x => ({ ...x, [b.id]: v }))))}
           {fila('envase', 'Envase para llevar', <IconoEnvase />, envaseBs, setEnvaseBs)}
         </div>

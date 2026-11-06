@@ -47,7 +47,7 @@ function Items({ p }: { p: Pick<Comanda, 'perros' | 'bebidas' | 'envases'> }) {
         const pocos = l.ingredientes.length <= INGREDIENTES.length / 2
         return (
           <li key={i}>
-            <b>{l.cant}×</b> perro {esConTodo(l) ? 'con todo' : ''}
+            <b>{l.cant}×</b> perro {l.carne && <b className="carne">CON CARNE</b>} {esConTodo(l) ? 'con todo' : ''}
             {!esConTodo(l) && (pocos
               ? <span className="con">solo: {INGREDIENTES.filter(x => l.ingredientes.includes(x.id)).map(x => x.nombre).join(', ')}</span>
               : <span className="sin">sin {sin.join(', ')}</span>)}
