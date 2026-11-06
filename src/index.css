@@ -53,10 +53,10 @@ select.box option { background: #2e2e2e; }
 
 /* Tabla de perros */
 .gridwrap { overflow-x: auto; padding-bottom: 4px; }
-.grid { display: grid; grid-template-columns: 62px 66px repeat(9, minmax(58px, 1fr)); gap: 8px; min-width: 760px; }
+.grid { display: grid; grid-template-columns: 62px 66px 66px repeat(9, minmax(58px, 1fr)); gap: 8px; min-width: 830px; }
 .col { background: var(--col); border-radius: 10px; padding: 8px 5px 10px; display: flex; flex-direction: column; align-items: center; gap: 7px; }
 .col.cant { background: var(--panel); }
-.col.todo { background: #34302a; }
+.col.todo, .col.carne { background: #34302a; }
 .col h4 { margin: 0; font-size: 15px; font-weight: 600; text-align: center; line-height: 1.05; min-height: 32px; display: flex; align-items: flex-end; }
 .col.cant h4 { font-size: 22px; font-weight: 700; align-items: center; }
 .ic { width: 54px; height: 54px; border-radius: 10px; background: var(--tile); box-shadow: 0 2px 0 #0006, inset 0 0 0 1px #3a3a38; display: grid; place-items: center; overflow: hidden; margin-bottom: 6px; }
@@ -140,6 +140,7 @@ textarea.box { width: 100%; min-height: 78px; resize: vertical; font-size: 17px;
 .orden li b { font-size: 22px; margin-right: 4px; }
 .orden li .sin { display: block; color: var(--err); font-size: 17px; }
 .orden li .con { display: block; color: var(--soft); font-size: 16px; }
+.orden li b.carne { font-size: 17px; margin: 0 4px 0 0; background: #b5522f; color: #fff; padding: 1px 6px; border-radius: 5px; }
 .orden .obs { background: #3b3322; color: var(--mustard); border-radius: 8px; padding: 6px 10px; font-size: 17px; }
 .aviso { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ok); color: #10231a; font-weight: 700; font-size: 20px; padding: 12px 20px; border-radius: 12px; box-shadow: 0 6px 24px #0008; max-width: calc(100% - 32px); z-index: 10; }
 

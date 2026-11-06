@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { fmtBs, fmtNumero, fmtUsd, totalPerros } from '../domain/calculos'
+import { fmtBs, fmtNumero, fmtUsd, totalPerros, totalPerrosCarne } from '../domain/calculos'
 import { BEBIDAS, INSUMOS } from '../domain/menu'
 import { deberiaQuedar, usado } from '../domain/inventario'
 import { totalMetodoBs } from '../domain/reporte'
@@ -8,7 +8,7 @@ import perroBanner from '../assets/reporte/perro.png'
 import efectivo from '../assets/iconos/efectivo.png'
 import movil from '../assets/iconos/movil.png'
 import tarjeta from '../assets/iconos/tarjeta.png'
-import { IconoCredito, IconoEnvase } from './Iconos'
+import { IconoCarne, IconoCredito, IconoEnvase } from './Iconos'
 import { IconoTransferencia } from './IconoTransferencia'
 import './ControlDiario.css'
 
@@ -125,6 +125,7 @@ export function ControlDiario({ jornada, comandas, resumen: r, inventarioFinal, 
             <h3>Precios del día</h3>
             <div className="cd-precios-fila">
               <div><img src={perroBanner} alt="" /><small>Precio del perro caliente</small><span>Bs. <u>{fmtBs(jornada.precios.perro)}</u></span></div>
+              <div><IconoCarne /><small>Precio del perro con carne</small><span>Bs. <u>{fmtBs(jornada.precios.perroCarne ?? 0)}</u></span></div>
               {BEBIDAS.map(b => (
                 <div key={b.id}><IconoBebida b={b} /><small>Precio del {b.nombre.toLowerCase().replace(/ l$/, ' L')}</small><span>Bs. <u>{fmtBs(jornada.precios.bebidas?.[b.id] ?? 0)}</u></span></div>
               ))}
@@ -178,7 +179,7 @@ export function ControlDiario({ jornada, comandas, resumen: r, inventarioFinal, 
                 <tr key={c.id} className={anulada ? 'cd-anulada' : undefined}>
                   <td className="cd-num-com">{fmtNumero(c.numero).slice(1)}</td>
                   <td className="cd-nombre">{c.nombre}{anulada && <em> (anulada)</em>}</td>
-                  <td className="cd-num">{totalPerros(c.perros) || ''}</td>
+                  <td className="cd-num">{totalPerros(c.perros) || ''}{totalPerrosCarne(c.perros) > 0 && <small className="cd-carne"> ({totalPerrosCarne(c.perros)} c/carne)</small>}</td>
                   {BEBIDAS.map(b => <td key={b.id} className="cd-num">{c.bebidas[b.id] || ''}</td>)}
                   <td className="cd-num">{c.envases || ''}</td>
                   <td className="cd-num cd-total">{anulada ? '' : fmtBs(c.totalBs)}</td>
@@ -205,6 +206,7 @@ export function ControlDiario({ jornada, comandas, resumen: r, inventarioFinal, 
           <h3>Resumen de ventas del día</h3>
           <ul>
             <li><img src={perroBanner} alt="" /><span>Total de perros calientes vendidos:</span><b>{r.perros}</b></li>
+            <li><IconoCarne /><span>De ellos, perros con carne:</span><b>{r.perrosCarne ?? 0}</b></li>
             {BEBIDAS.map(b => <li key={b.id}><IconoBebida b={b} /><span>Total de {PLURAL[b.id]} vendidos:</span><b>{r.bebidas[b.id] ?? 0}</b></li>)}
             <li><IconoEnvase /><span>Total de envases para llevar vendidos:</span><b>{r.envases}</b></li>
             <li className="sin-ic"><span>Total de comandas:</span><b>{r.comandasCobradas + r.pendientes}</b></li>

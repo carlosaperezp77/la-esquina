@@ -1,16 +1,30 @@
 import { describe, expect, it } from 'vitest'
-import { aDolares, esConTodo, leerNumero, resumen, sinIngredientes, sinUltimoAdicional, sumarAdicional, totalBs, ultimoAdicional, validar, validarJornada } from './calculos'
+import { aDolares, esConTodo, faltaPrecioCarne, leerNumero, resumen, sinIngredientes, sinUltimoAdicional, sumarAdicional, totalBs, ultimoAdicional, validar, validarJornada } from './calculos'
 import { INGREDIENTES } from './menu'
 import type { Comanda, NuevaComanda, Precios } from './tipos'
 
 const todo = INGREDIENTES.map(i => i.id)
 const base: NuevaComanda = { nombre: 'Ana', mesa: '', perros: [], bebidas: {}, envases: 0, observaciones: '' }
-const precios: Precios = { perro: 600, bebidas: { nestea: 300, refresco: 350, refresco1l: 700, refresco2l: 1100, agua: 200 }, envase: 100 }
+const precios: Precios = { perro: 600, bebidas: { nestea: 300, refresco: 350, refresco1l: 700, refresco2l: 1100, agua: 200 }, perroCarne: 900, envase: 100 }
 
 describe('cálculos de la comanda', () => {
   it('suma perros y bebidas en Bs con los precios del día', () => {
     expect(totalBs({ perros: [{ cant: 2, ingredientes: todo }, { cant: 1, ingredientes: ['salchicha'] }], bebidas: { refresco: 2, refresco2l: 1, agua: 1 }, envases: 2 }, precios))
       .toBe(3 * 600 + 2 * 350 + 1100 + 200 + 2 * 100)
+  })
+
+  it('cobra el perro con carne a su propio precio', () => {
+    expect(totalBs({ perros: [{ cant: 2, ingredientes: todo, carne: true }, { cant: 1, ingredientes: todo }], bebidas: {}, envases: 0 }, precios))
+      .toBe(2 * 900 + 600)
+    expect(resumen({ perros: [{ cant: 2, ingredientes: todo, carne: true }, { cant: 1, ingredientes: ['salchicha'] }], bebidas: {}, envases: 0 }))
+      .toBe('3 perros (2 con todo, 2 con carne)')
+    expect(resumen({ perros: [{ cant: 1, ingredientes: todo, carne: true }], bebidas: {}, envases: 0 })).toBe('1 perro con todo con carne')
+  })
+
+  it('pide el precio del perro con carne', () => {
+    expect(validarJornada({ tasa: 190, precios: { ...precios, perroCarne: 0 } })).toMatch(/con carne/)
+    expect(faltaPrecioCarne([{ cant: 1, ingredientes: todo, carne: true }], { ...precios, perroCarne: undefined })).toMatch(/con carne/)
+    expect(faltaPrecioCarne([{ cant: 1, ingredientes: todo }], { ...precios, perroCarne: undefined })).toBeNull()
   })
 
   it('convierte a dólares con la tasa y redondea a céntimos', () => {

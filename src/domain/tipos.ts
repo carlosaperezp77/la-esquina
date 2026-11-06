@@ -21,6 +21,8 @@ export type EstadoComanda = 'nueva' | 'preparando' | 'lista' | 'entregada'
 export interface LineaPerro {
   cant: number
   ingredientes: IngredienteId[]
+  /** Perro con carne: lleva carne y tiene su propio precio. */
+  carne?: boolean
 }
 
 /** Moneda en que se recibió el efectivo. Los demás métodos son siempre en Bs. */
@@ -91,6 +93,8 @@ export interface NuevaComanda {
 /** Precios de venta en bolívares que fija el cajero al abrir el día. */
 export interface Precios {
   perro: number
+  /** Puede faltar en aperturas hechas antes de que existiera el perro con carne. */
+  perroCarne?: number
   bebidas: Record<BebidaId, number>
   envase: number
 }
@@ -141,6 +145,7 @@ export interface ResumenDia {
   porMetodo: VentaPorMetodo[]
   perros: number
   perrosConTodo: number
+  perrosCarne: number
   bebidas: Partial<Record<BebidaId, number>>
   envases: number
   anuladas: number

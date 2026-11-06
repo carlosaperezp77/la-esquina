@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { almacen } from '../data'
-import { aDolares, esConTodo, fmtBs, fmtNumero, fmtUsd, quien, totalBs, validar } from '../domain/calculos'
+import { aDolares, esConTodo, faltaPrecioCarne, fmtBs, fmtNumero, fmtUsd, quien, totalBs, validar } from '../domain/calculos'
 import { BEBIDAS, INGREDIENTES, MESAS } from '../domain/menu'
 import type { BebidaId, Comanda, IngredienteId, Jornada, LineaPerro } from '../domain/tipos'
-import { IconoEnvase } from './Iconos'
+import { IconoCarne, IconoEnvase } from './Iconos'
 import { Fecha, Hora } from './Reloj'
 import { useAhora } from './useAhora'
 
@@ -49,6 +49,9 @@ export function FormularioComanda({ jornada, agregarA, alTerminar }: Props) {
       ? { ...l, ingredientes: [] }
       : conCantidad({ ...l, ingredientes: INGREDIENTES.map(x => x.id) }))
 
+  const alternarCarne = (i: number) =>
+    cambiarFila(i, l => (l.carne ? { ...l, carne: false } : conCantidad({ ...l, carne: true })))
+
   const cambiarBebida = (id: BebidaId, delta: number) =>
     setBebidas(b => ({ ...b, [id]: Math.max(0, (b[id] ?? 0) + delta) }))
 
@@ -60,7 +63,7 @@ export function FormularioComanda({ jornada, agregarA, alTerminar }: Props) {
     e.preventDefault()
     const pedido = { perros, bebidas, envases, observaciones }
     const nueva = agregarA ? { ...pedido, nombre: agregarA.nombre, mesa: agregarA.mesa } : { ...pedido, nombre, mesa }
-    const error = validar(nueva)
+    const error = validar(nueva) ?? faltaPrecioCarne(perros, jornada.precios)
     if (error) return setMensaje({ texto: error, ok: false })
     setEnviando(true)
     try {
@@ -122,6 +125,13 @@ export function FormularioComanda({ jornada, agregarA, alTerminar }: Props) {
             {perros.map((l, i) => (
               <button key={i} type="button" className="sq" aria-pressed={esConTodo(l)}
                 aria-label={`Con todo fila ${i + 1}`} onClick={() => alternarTodo(i)} />
+            ))}
+          </div>
+          <div className="col carne">
+            <h4>Con<br />carne</h4><div className="ic"><IconoCarne /></div>
+            {perros.map((l, i) => (
+              <button key={i} type="button" className="sq" aria-pressed={!!l.carne}
+                aria-label={`Con carne fila ${i + 1}`} onClick={() => alternarCarne(i)} />
             ))}
           </div>
           {INGREDIENTES.map(ing => (

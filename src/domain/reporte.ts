@@ -1,4 +1,4 @@
-import { esConTodo, redondear, totalPerros } from './calculos'
+import { esConTodo, redondear, totalPerros, totalPerrosCarne } from './calculos'
 import { BEBIDAS, METODOS_PAGO } from './menu'
 import type { Comanda, Moneda, ResumenDia, VentaPorMetodo } from './tipos'
 
@@ -40,6 +40,7 @@ export function resumenDia(comandas: Comanda[], fecha: string): ResumenDia {
     porMetodo: [...metodos.values()].sort((a, b) => orden(a) - orden(b)),
     perros: facturadas.reduce((s, c) => s + totalPerros(c.perros), 0),
     perrosConTodo: facturadas.reduce((s, c) => s + totalPerros(c.perros.filter(esConTodo)), 0),
+    perrosCarne: facturadas.reduce((s, c) => s + totalPerrosCarne(c.perros), 0),
     bebidas,
     envases: facturadas.reduce((s, c) => s + (c.envases ?? 0), 0),
     anuladas: delDia.length - validas.length,
