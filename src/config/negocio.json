@@ -1,0 +1,11 @@
+{
+  "nombre": "La Esquina",
+  "descripcion": "Comandas, cobro y cocina de La Esquina, perros calientes.",
+  "logoAlt": "La Esquina, perros calientes",
+  "lema": "Más que perro, un buen momento",
+  "frases": {
+    "sabores": ["Sabores", "que unen", "personas"],
+    "gracias": ["Gracias por ser parte", "de esta gran familia"],
+    "regresa": ["Un sabor", "que siempre regresa"]
+  }
+}

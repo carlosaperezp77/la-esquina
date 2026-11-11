@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
 import { fmtBs, fmtNumero, fmtUsd, totalPerros } from '../domain/calculos'
+import { NEGOCIO } from '../config/negocio'
 import { BEBIDAS, INSUMOS } from '../domain/menu'
 import { deberiaQuedar, usado } from '../domain/inventario'
 import { totalMetodoBs } from '../domain/reporte'
@@ -67,7 +68,7 @@ interface Props {
 
 /**
  * Hoja "Control diario de caja" con el mismo diseño del formato en papel de
- * La Esquina, llena con las comandas del día. Se ve en pantalla y se imprime.
+ * del negocio, llena con las comandas del día. Se ve en pantalla y se imprime.
  */
 export function ControlDiario({ jornada, comandas, resumen: r, inventarioFinal, observaciones }: Props) {
   const delDia = comandas.filter(c => c.fecha === jornada.fecha).sort((a, b) => a.numero - b.numero)
@@ -111,7 +112,7 @@ export function ControlDiario({ jornada, comandas, resumen: r, inventarioFinal, 
         <img className="cd-perro" src={perroBanner} alt="" />
         <div className="cd-derecha">
           <span className="cd-momento">Más que un perro,<br />es un buen momento <Corazon /></span>
-          <span className="cd-sabores">Sabores<br />que unen<br />personas <Corazon /></span>
+          <span className="cd-sabores"><Lineas texto={NEGOCIO.frases.sabores} /> <Corazon /></span>
         </div>
       </header>
 
@@ -238,14 +239,19 @@ export function ControlDiario({ jornada, comandas, resumen: r, inventarioFinal, 
             <circle cx="9" cy="11" r="4.5" /><path d="M1 29c0-6 3.5-10 8-10 2 0 3.5.6 5 1.8-2 2.4-3 5.3-3 8.2z" />
             <circle cx="39" cy="11" r="4.5" /><path d="M47 29c0-6-3.5-10-8-10-2 0-3.5.6-5 1.8 2 2.4 3 5.3 3 8.2z" />
           </svg>
-          <span>Gracias por ser parte<br />de esta gran familia <Corazon /></span>
+          <span><Lineas texto={NEGOCIO.frases.gracias} /> <Corazon /></span>
         </div>
         <div className="cd-pie-marca">
-          <span className="cd-marca">La Esquina</span>
-          <span className="cd-regresa">Un sabor<br />que siempre regresa <Corazon /></span>
+          <span className="cd-marca">{NEGOCIO.nombre}</span>
+          <span className="cd-regresa"><Lineas texto={NEGOCIO.frases.regresa} /> <Corazon /></span>
         </div>
       </footer>
       <div className="cd-franjas"><span /><span /></div>
     </article>
   )
+}
+
+/** Frase en varias líneas, como en la hoja impresa. */
+function Lineas({ texto }: { texto: string[] }) {
+  return <>{texto.map((linea, i) => <Fragment key={i}>{i > 0 && <br />}{linea}</Fragment>)}</>
 }

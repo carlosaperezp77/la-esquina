@@ -1,5 +1,6 @@
 import logo from '../assets/iconos/logo.png'
 import lema from '../assets/iconos/tag.png'
+import { NEGOCIO } from '../config/negocio'
 import { almacen } from '../data'
 import { nombreRol, type Pantalla } from '../domain/accesos'
 import type { Usuario } from '../domain/tipos'
@@ -17,8 +18,8 @@ export function Encabezado({ numero, pantalla = null, permitidas = [], usuario =
     <>
       <header className="top">
         <div className="top-in">
-          <img className="logo" src={logo} alt="La Esquina, perros calientes" />
-          <img className="tagl" src={lema} alt="Más que perro, un buen momento" />
+          <img className="logo" src={logo} alt={NEGOCIO.logoAlt} />
+          <img className="tagl" src={lema} alt={NEGOCIO.lema} />
           {numero && (
             <div className="num" aria-label="Número de la próxima comanda">
               <b>Nº</b><span>{numero}</span>

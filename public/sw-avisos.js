@@ -10,7 +10,7 @@ self.addEventListener('notificationclick', e => {
 
 // Aviso que manda el servidor (función avisar-comanda) aunque el teléfono esté bloqueado.
 self.addEventListener('push', e => {
-  let aviso = { title: 'La Esquina', body: 'Llegó una comanda', tag: 'comanda' }
+  let aviso = { title: 'Comanda nueva', body: 'Llegó una comanda', tag: 'comanda' }
   try { aviso = { ...aviso, ...e.data.json() } } catch { /* aviso sin datos */ }
   e.waitUntil(self.registration.showNotification(aviso.title, {
     body: aviso.body,
