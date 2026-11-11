@@ -1,0 +1,22 @@
+{
+  "nombre": "Perros El Buen Sabor",
+  "descripcion": "Demo de KUBO App: comandas, cobro en $ y Bs y cierre de caja.",
+  "logoAlt": "Perros El Buen Sabor",
+  "lema": "Demo de KUBO App",
+  "logos": false,
+  "frases": {
+    "sabores": [
+      "Comandas",
+      "y caja",
+      "en orden"
+    ],
+    "gracias": [
+      "Hecho con",
+      "KUBO App"
+    ],
+    "regresa": [
+      "Tu local,",
+      "en orden"
+    ]
+  }
+}

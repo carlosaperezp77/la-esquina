@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { ES_DEMO } from '../config/negocio'
 import { almacen } from '../data'
+import { USUARIO_DEMO } from '../data/demo'
 import { validarNuevoUsuario } from '../domain/accesos'
 import type { Usuario } from '../domain/tipos'
 
@@ -27,6 +29,7 @@ export function Entrar({ alEntrar }: { alEntrar: (u: Usuario) => void }) {
   return (
     <form className="wrap acceso" onSubmit={entrar} noValidate>
       <h1 className="titulo" style={{ fontSize: 28 }}>Entrar<small>Con el usuario y la clave que te dio el administrador.</small></h1>
+      {ES_DEMO && <p className="msg">Demo: usuario <b>{USUARIO_DEMO.usuario}</b>, clave <b>{USUARIO_DEMO.clave}</b></p>}
       <section className="panel">
         <label className="lbl" htmlFor="usuario">Usuario</label>
         <input className="box" id="usuario" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false}

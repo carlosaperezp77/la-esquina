@@ -18,8 +18,14 @@ export function Encabezado({ numero, pantalla = null, permitidas = [], usuario =
     <>
       <header className="top">
         <div className="top-in">
-          <img className="logo" src={logo} alt={NEGOCIO.logoAlt} />
-          <img className="tagl" src={lema} alt={NEGOCIO.lema} />
+          {NEGOCIO.logos ? (
+            <>
+              <img className="logo" src={logo} alt={NEGOCIO.logoAlt} />
+              <img className="tagl" src={lema} alt={NEGOCIO.lema} />
+            </>
+          ) : (
+            <div className="marca-texto"><b>{NEGOCIO.nombre}</b><span>{NEGOCIO.lema}</span></div>
+          )}
           {numero && (
             <div className="num" aria-label="Número de la próxima comanda">
               <b>Nº</b><span>{numero}</span>
