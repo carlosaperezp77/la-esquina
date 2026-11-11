@@ -34,6 +34,15 @@ Sin configuración corre en **modo demo**: los datos quedan solo en ese navegado
 
 > La etapa 1 deja la tabla abierta a quien tenga la clave pública. Antes de usarla en el local se agrega inicio de sesión por rol.
 
+## Instalarla para otro negocio
+
+La marca no está repartida por el código. Para preparar la app para otro local:
+
+1. **Nombre y textos**: edita `src/config/negocio.json` (nombre, descripción, lema y las frases de la hoja de cierre). De ahí salen el título de la pestaña, el nombre al instalarla, las notificaciones y la hoja impresa.
+2. **Logos**: reemplaza `src/assets/iconos/logo.png` (logo) y `src/assets/iconos/tag.png` (lema), y los íconos `public/favicon.png`, `public/icono-192.png` y `public/icono-512.png`.
+3. **Menú**: ingredientes, bebidas e insumos están en `src/domain/menu.ts`.
+4. **Datos**: crea un proyecto de Supabase propio para ese negocio (ver la sección de Supabase) para que cada local vea solo sus comandas.
+
 ## Publicación
 
 Cada cambio que entra a `main` se publica solo en GitHub Pages:

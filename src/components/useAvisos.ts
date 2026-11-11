@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { NEGOCIO } from '../config/negocio'
 import { fmtNumero, quien, resumen, ultimoAdicional } from '../domain/calculos'
 import { almacen } from '../data'
 import type { Comanda } from '../domain/tipos'
@@ -36,8 +37,8 @@ async function notificar(texto: string) {
   }
   try {
     const reg = await navigator.serviceWorker?.getRegistration()
-    if (reg) return await reg.showNotification('La Esquina', opciones)
-    new Notification('La Esquina', opciones)
+    if (reg) return await reg.showNotification(NEGOCIO.nombre, opciones)
+    new Notification(NEGOCIO.nombre, opciones)
   } catch { /* sin notificación, queda el aviso en pantalla */ }
 }
 
