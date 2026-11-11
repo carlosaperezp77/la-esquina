@@ -43,6 +43,12 @@ La marca no está repartida por el código. Para preparar la app para otro local
 3. **Menú**: ingredientes, bebidas e insumos están en `src/domain/menu.ts`.
 4. **Datos**: crea un proyecto de Supabase propio para ese negocio (ver la sección de Supabase) para que cada local vea solo sus comandas.
 
+## Demo para enseñar
+
+Cada publicación incluye también una demo en https://carlosaperezp77.github.io/la-esquina/demo/ con un local ficticio ("Perros El Buen Sabor", `src/config/negocio.demo.json`) y comandas de prueba que se crean solas la primera vez. Entra con usuario `demo` y clave `demo123`. Los datos quedan solo en el navegador de quien la abre.
+
+Para probarla en tu equipo: `VITE_DEMO=1 npm run dev`.
+
 ## Publicación
 
 Cada cambio que entra a `main` se publica solo en GitHub Pages:
